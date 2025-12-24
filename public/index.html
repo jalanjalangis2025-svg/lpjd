@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Peta Interaktif Info Jalan Rusak</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="logo">
+                <i class="fas fa-road"></i>
+                <h1>Info Jalan Rusak</h1>
+            </div>
+            <nav class="nav">
+                <a href="index.html" class="nav-link active">
+                    <i class="fas fa-map"></i> Peta
+                </a>
+                <a href="report.html" class="nav-link">
+                    <i class="fas fa-flag"></i> Laporkan
+                </a>
+                <a href="about.html" class="nav-link">
+                    <i class="fas fa-info-circle"></i> Tentang
+                </a>
+                <a href="../admin/login.html" class="nav-link admin-login">
+                    <i class="fas fa-user-cog"></i> Admin
+                </a>
+            </nav>
+            <button class="menu-toggle">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <h2>Pantau Kondisi Jalan di Wilayah Anda</h2>
+                <p>Sistem informasi interaktif untuk memantau dan melaporkan kondisi jalan rusak</p>
+                <a href="#map" class="btn btn-primary">
+                    <i class="fas fa-map-marked-alt"></i> Lihat Peta
+                </a>
+                <a href="report.html" class="btn btn-secondary">
+                    <i class="fas fa-flag"></i> Laporkan Kerusakan
+                </a>
+            </div>
+            <div class="hero-stats">
+                <div class="stat">
+                    <div class="stat-number" id="total-roads">0</div>
+                    <div class="stat-label">Jalan Terdata</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number" id="total-reports">0</div>
+                    <div class="stat-label">Laporan Masuk</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number" id="severe-roads">0</div>
+                    <div class="stat-label">Rusak Berat</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Map Section -->
+    <section id="map" class="map-section">
+        <div class="container">
+            <div class="section-header">
+                <h2>Peta Kondisi Jalan</h2>
+                <p>Interaktif dengan informasi kondisi jalan berdasarkan SDI dan PCI</p>
+            </div>
+
+            <div class="map-container">
+                <div id="main-map"></div>
+
+                <div class="map-controls">
+                    <div class="control-group">
+                        <h3>Layer Peta</h3>
+                        <div class="layer-controls">
+                            <label class="layer-checkbox">
+                                <input type="checkbox" id="layer-sdi" checked>
+                                <span class="checkmark"></span>
+                                SDI (Surface Distress Index)
+                            </label>
+                            <label class="layer-checkbox">
+                                <input type="checkbox" id="layer-pci" checked>
+                                <span class="checkmark"></span>
+                                PCI (Pavement Condition Index)
+                            </label>
+                            <label class="layer-checkbox">
+                                <input type="checkbox" id="layer-public" checked>
+                                <span class="checkmark"></span>
+                                Laporan Masyarakat
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <h3>Legenda</h3>
+                        <div class="legend">
+                            <div class="legend-item">
+                                <span class="legend-color" style="background-color: #4CAF50;"></span>
+                                <span class="legend-label">SDI: Baik / PCI: Excellent</span>
+                            </div>
+                            <div class="legend-item">
+                                <span class="legend-color" style="background-color: #8BC34A;"></span>
+                                <span class="legend-label">SDI: Sedang / PCI: Good</span>
+                            </div>
+                            <div class="legend-item">
+                                <span class="legend-color" style="background-color: #FFC107;"></span>
+                                <span class="legend-label">SDI: Rusak Ringan / PCI: Fair</span>
+                            </div>
+                            <div class="legend-item">
+                                <span class="legend-color" style="background-color: #F44336;"></span>
+                                <span class="legend-label">SDI: Rusak Berat / PCI: Poor-Very Poor</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <h3>Pencarian</h3>
+                        <div class="search-box">
+                            <input type="text" id="search-location" placeholder="Cari lokasi atau jalan...">
+                            <button id="search-btn"><i class="fas fa-search"></i></button>
+                        </div>
+                        <div id="search-results" class="search-results"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Recent Reports -->
+    <section class="reports-section">
+        <div class="container">
+            <div class="section-header">
+                <h2>Laporan Terbaru dari Masyarakat</h2>
+                <p>Laporan kerusakan jalan yang baru dilaporkan masyarakat</p>
+            </div>
+
+            <div class="reports-grid" id="recent-reports">
+                <!-- Data akan diisi oleh JavaScript -->
+                <div class="loading">Memuat data...</div>
+            </div>
+
+            <div class="text-center">
+                <a href="report.html" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Tambah Laporan Baru
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <div class="logo">
+                        <i class="fas fa-road"></i>
+                        <h3>Info Jalan Rusak</h3>
+                    </div>
+                    <p>Sistem informasi interaktif untuk memantau dan melaporkan kondisi jalan rusak.</p>
+                </div>
+
+                <div class="footer-section">
+                    <h4>Link Cepat</h4>
+                    <ul>
+                        <li><a href="index.html"><i class="fas fa-map"></i> Peta Interaktif</a></li>
+                        <li><a href="report.html"><i class="fas fa-flag"></i> Laporkan Kerusakan</a></li>
+                        <li><a href="about.html"><i class="fas fa-info-circle"></i> Tentang Kami</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-section">
+                    <h4>Kontak</h4>
+                    <ul>
+                        <li><i class="fas fa-envelope"></i> info@jalanrusak.id</li>
+                        <li><i class="fas fa-phone"></i> (021) 1234-5678</li>
+                        <li><i class="fas fa-map-marker-alt"></i> Jakarta, Indonesia</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <p>&copy; 2024 Info Jalan Rusak. Hak Cipta Dilindungi.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script type="module" src="../shared/supabase.js"></script>
+    <script type="module" src="../shared/map.js"></script>
+    <script type="module" src="public.js"></script>
+</body>
+
+</html>

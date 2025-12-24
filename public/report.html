@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laporkan Kerusakan Jalan - Info Jalan Rusak</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .report-page {
+            padding: 60px 0;
+            background-color: #f8fafc;
+        }
+
+        .report-form-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            padding: 40px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .form-header h2 {
+            color: #1e293b;
+            margin-bottom: 10px;
+        }
+
+        .form-header p {
+            color: #64748b;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #475569;
+        }
+
+        .form-input,
+        .form-select,
+        .form-textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #cbd5e1;
+            border-radius: 5px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .form-input:focus,
+        .form-select:focus,
+        .form-textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .form-textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .file-upload {
+            border: 2px dashed #cbd5e1;
+            border-radius: 5px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+
+        .file-upload:hover {
+            border-color: #3b82f6;
+        }
+
+        .file-upload i {
+            font-size: 40px;
+            color: #64748b;
+            margin-bottom: 10px;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .file-preview {
+            margin-top: 15px;
+            display: none;
+        }
+
+        .file-preview img {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 5px;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 15px;
+            font-size: 18px;
+            margin-top: 20px;
+        }
+
+        .map-picker-btn {
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .success-message {
+            text-align: center;
+            padding: 40px;
+            display: none;
+        }
+
+        .success-message i {
+            font-size: 60px;
+            color: #10b981;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .report-form-container {
+                padding: 20px;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="logo">
+                <i class="fas fa-road"></i>
+                <h1>Info Jalan Rusak</h1>
+            </div>
+            <nav class="nav">
+                <a href="index.html" class="nav-link">
+                    <i class="fas fa-map"></i> Peta
+                </a>
+                <a href="report.html" class="nav-link active">
+                    <i class="fas fa-flag"></i> Laporkan
+                </a>
+                <a href="about.html" class="nav-link">
+                    <i class="fas fa-info-circle"></i> Tentang
+                </a>
+            </nav>
+            <button class="menu-toggle">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Report Form -->
+    <section class="report-page">
+        <div class="container">
+            <div class="report-form-container">
+                <div id="form-content">
+                    <div class="form-header">
+                        <h2>Laporkan Kerusakan Jalan</h2>
+                        <p>Bantu kami meningkatkan kondisi jalan dengan melaporkan kerusakan yang Anda temui</p>
+                    </div>
+
+                    <form id="reportForm">
+                        <div class="form-group">
+                            <label class="form-label" for="reporterName">Nama Anda *</label>
+                            <input type="text" id="reporterName" class="form-input" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="reporterContact">Kontak (Email/Telepon) *</label>
+                            <input type="text" id="reporterContact" class="form-input" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="roadName">Nama Jalan (Jika Diketahui)</label>
+                            <input type="text" id="roadName" class="form-input" placeholder="Contoh: Jalan Sudirman">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="district">Kecamatan *</label>
+                            <select id="district" class="form-select" required>
+                                <option value="">Pilih Kecamatan</option>
+                                <option value="menteng">Menteng</option>
+                                <option value="tanah_abang">Tanah Abang</option>
+                                <option value="setiabudi">Setiabudi</option>
+                                <option value="kebayoran_baru">Kebayoran Baru</option>
+                                <option value="cilandak">Cilandak</option>
+                                <option value="tebet">Tebet</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="description">Deskripsi Kerusakan *</label>
+                            <textarea id="description" class="form-textarea"
+                                placeholder="Jelaskan kondisi kerusakan jalan secara detail..." required></textarea>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label" for="latitude">Latitude *</label>
+                                <input type="number" id="latitude" class="form-input" step="any" required
+                                    placeholder="-6.2088">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="longitude">Longitude *</label>
+                                <input type="number" id="longitude" class="form-input" step="any" required
+                                    placeholder="106.8456">
+                            </div>
+                        </div>
+
+                        <button type="button" id="mapPicker" class="btn btn-secondary map-picker-btn">
+                            <i class="fas fa-map-marker-alt"></i> Pilih Lokasi dari Peta
+                        </button>
+
+                        <div class="form-group">
+                            <label class="form-label">Foto Kerusakan (Opsional)</label>
+                            <div class="file-upload" id="fileUploadArea">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                                <p>Klik untuk upload foto</p>
+                                <p class="small-text">Format: JPG, PNG. Maks: 5MB</p>
+                                <input type="file" id="photo" class="file-input" accept="image/*">
+                            </div>
+                            <div class="file-preview" id="filePreview">
+                                <img id="previewImage" src="" alt="Preview">
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary submit-btn">
+                            <i class="fas fa-paper-plane"></i> Kirim Laporan
+                        </button>
+                    </form>
+                </div>
+
+                <div id="success-message" class="success-message">
+                    <i class="fas fa-check-circle"></i>
+                    <h3>Laporan Berhasil Dikirim!</h3>
+                    <p>Terima kasih telah melaporkan kerusakan jalan. Laporan Anda akan diverifikasi oleh tim kami.</p>
+                    <div style="margin-top: 30px;">
+                        <a href="index.html" class="btn btn-primary">
+                            <i class="fas fa-map"></i> Kembali ke Peta
+                        </a>
+                        <a href="report.html" class="btn btn-secondary" onclick="location.reload()">
+                            <i class="fas fa-plus"></i> Buat Laporan Baru
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <div class="logo">
+                        <i class="fas fa-road"></i>
+                        <h3>Info Jalan Rusak</h3>
+                    </div>
+                    <p>Sistem informasi interaktif untuk memantau dan melaporkan kondisi jalan rusak.</p>
+                </div>
+
+                <div class="footer-section">
+                    <h4>Link Cepat</h4>
+                    <ul>
+                        <li><a href="index.html"><i class="fas fa-map"></i> Peta Interaktif</a></li>
+                        <li><a href="report.html"><i class="fas fa-flag"></i> Laporkan Kerusakan</a></li>
+                        <li><a href="about.html"><i class="fas fa-info-circle"></i> Tentang Kami</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-section">
+                    <h4>Kontak</h4>
+                    <ul>
+                        <li><i class="fas fa-envelope"></i> info@jalanrusak.id</li>
+                        <li><i class="fas fa-phone"></i> (021) 1234-5678</li>
+                        <li><i class="fas fa-map-marker-alt"></i> Jakarta, Indonesia</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <p>&copy; 2024 Info Jalan Rusak. Hak Cipta Dilindungi.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Modal Peta -->
+    <div id="mapModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Pilih Lokasi di Peta</h3>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div id="modalMap" style="height: 400px; border-radius: 5px;"></div>
+                <p style="margin-top: 10px;">Klik pada peta untuk memilih lokasi</p>
+                <p>Koordinat terpilih: <span id="selectedCoords">Belum dipilih</span></p>
+            </div>
+            <div class="modal-footer">
+                <button id="useLocation" class="btn btn-primary">Gunakan Lokasi</button>
+                <button id="cancelLocation" class="btn btn-secondary">Batal</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script type="module" src="../shared/supabase.js"></script>
+    <script type="module" src="report.js"></script>
+
+    <style>
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            color: #1e293b;
+        }
+
+        .close-modal {
+            font-size: 24px;
+            cursor: pointer;
+            color: #64748b;
+        }
+
+        .close-modal:hover {
+            color: #1e293b;
+        }
+
+        .modal-body {
+            padding: 20px;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .modal-footer {
+            padding: 20px;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .small-text {
+            font-size: 12px;
+            color: #94a3b8;
+            margin-top: 5px;
+        }
+    </style>
+</body>
+
+</html>

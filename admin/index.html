@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Sistem Jalan Rusak</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <i class="fas fa-road"></i>
+                <h2>Admin Panel</h2>
+            </div>
+            <button class="sidebar-toggle">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+
+        <div class="sidebar-menu">
+            <a href="#dashboard" class="menu-item active">
+                <i class="fas fa-tachometer-alt"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="#data-jalan" class="menu-item">
+                <i class="fas fa-road"></i>
+                <span>Data Jalan</span>
+            </a>
+            <a href="#laporan-masyarakat" class="menu-item">
+                <i class="fas fa-users"></i>
+                <span>Laporan Masyarakat</span>
+            </a>
+            <a href="#tambah-data" class="menu-item">
+                <i class="fas fa-plus-circle"></i>
+                <span>Tambah Data Jalan</span>
+            </a>
+            <a href="#pengaturan" class="menu-item">
+                <i class="fas fa-cog"></i>
+                <span>Pengaturan</span>
+            </a>
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar">
+                    <i class="fas fa-user-shield"></i>
+                </div>
+                <div class="user-details">
+                    <div class="user-name" id="adminName">Administrator</div>
+                    <div class="user-role">Super Admin</div>
+                </div>
+            </div>
+            <button id="logoutBtn" class="logout-btn">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Logout</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-title">
+                <h1 id="pageTitle">Dashboard</h1>
+                <p id="pageSubtitle">Sistem Informasi Jalan Rusak</p>
+            </div>
+            <div class="header-actions">
+                <div class="date-time" id="currentDateTime">
+                    <!-- Akan diisi oleh JavaScript -->
+                </div>
+                <button class="btn btn-primary" id="refreshBtn">
+                    <i class="fas fa-sync-alt"></i> Refresh Data
+                </button>
+            </div>
+        </header>
+
+        <!-- Content Area -->
+        <div class="content">
+            <!-- Dashboard Section -->
+            <section id="dashboard" class="content-section active">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8);">
+                            <i class="fas fa-road"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3>Total Jalan</h3>
+                            <p class="stat-number" id="totalRoads">0</p>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #10b981, #047857);">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3>Jalan Baik</h3>
+                            <p class="stat-number" id="goodRoads">0</p>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3>Rusak Ringan</h3>
+                            <p class="stat-number" id="lightDamage">0</p>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #ef4444, #dc2626);">
+                            <i class="fas fa-times-circle"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3>Rusak Berat</h3>
+                            <p class="stat-number" id="heavyDamage">0</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dashboard-row">
+                    <div class="dashboard-card map-card">
+                        <div class="card-header">
+                            <h3>Peta Kondisi Jalan</h3>
+                            <div class="card-actions">
+                                <button class="btn-icon" id="mapZoomIn">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                                <button class="btn-icon" id="mapZoomOut">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                                <button class="btn-icon" id="mapLocate">
+                                    <i class="fas fa-location-arrow"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div id="adminMap" class="map-container"></div>
+                        <div class="map-legend">
+                            <div class="legend-item">
+                                <span class="legend-color" style="background-color: #4CAF50;"></span>
+                                <span>Baik</span>
+                            </div>
+                            <div class="legend-item">
+                                <span class="legend-color" style="background-color: #FFC107;"></span>
+                                <span>Rusak Ringan</span>
+                            </div>
+                            <div class="legend-item">
+                                <span class="legend-color" style="background-color: #F44336;"></span>
+                                <span>Rusak Berat</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-card">
+                        <div class="card-header">
+                            <h3>Laporan Terbaru</h3>
+                            <a href="#laporan-masyarakat" class="btn-link">Lihat Semua</a>
+                        </div>
+                        <div class="recent-reports" id="recentReports">
+                            <div class="loading">Memuat data...</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Data Jalan Section -->
+            <section id="data-jalan" class="content-section">
+                <div class="section-header">
+                    <h2>Data Jalan</h2>
+                    <p>Kelola data kondisi jalan berdasarkan SDI dan PCI</p>
+                </div>
+
+                <div class="controls">
+                    <div class="search-box">
+                        <input type="text" id="searchRoad" placeholder="Cari nama jalan atau kecamatan...">
+                        <button id="searchRoadBtn">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                    <div class="filter-controls">
+                        <select id="filterCondition">
+                            <option value="">Semua Kondisi</option>
+                            <option value="baik">Baik</option>
+                            <option value="sedang">Sedang</option>
+                            <option value="rusak_ringan">Rusak Ringan</option>
+                            <option value="rusak_berat">Rusak Berat</option>
+                        </select>
+                        <select id="filterDistrict">
+                            <option value="">Semua Kecamatan</option>
+                            <!-- Akan diisi oleh JavaScript -->
+                        </select>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Nama Jalan</th>
+                                <th>Kecamatan</th>
+                                <th>Kondisi SDI</th>
+                                <th>Kondisi PCI</th>
+                                <th>Koordinat</th>
+                                <th>Dilaporkan</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="roadsTableBody">
+                            <!-- Data akan diisi oleh JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="pagination" id="roadsPagination">
+                    <!-- Pagination akan diisi oleh JavaScript -->
+                </div>
+            </section>
+
+            <!-- Laporan Masyarakat Section -->
+            <section id="laporan-masyarakat" class="content-section">
+                <div class="section-header">
+                    <h2>Laporan Masyarakat</h2>
+                    <p>Verifikasi dan kelola laporan dari masyarakat</p>
+                </div>
+
+                <div class="tabs">
+                    <button class="tab-btn active" data-status="">Semua</button>
+                    <button class="tab-btn" data-status="pending">Menunggu <span class="badge"
+                            id="pendingCount">0</span></button>
+                    <button class="tab-btn" data-status="verified">Terverifikasi <span class="badge"
+                            id="verifiedCount">0</span></button>
+                    <button class="tab-btn" data-status="rejected">Ditolak <span class="badge"
+                            id="rejectedCount">0</span></button>
+                </div>
+
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Pelapor</th>
+                                <th>Kontak</th>
+                                <th>Lokasi</th>
+                                <th>Deskripsi</th>
+                                <th>Status</th>
+                                <th>Tanggal</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reportsTableBody">
+                            <!-- Data akan diisi oleh JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="pagination" id="reportsPagination">
+                    <!-- Pagination akan diisi oleh JavaScript -->
+                </div>
+            </section>
+
+            <!-- Tambah Data Jalan Section -->
+            <section id="tambah-data" class="content-section">
+                <div class="section-header">
+                    <h2>Tambah Data Jalan</h2>
+                    <p>Input data kondisi jalan baru</p>
+                </div>
+
+                <div class="form-container">
+                    <form id="addRoadForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="roadName">Nama Jalan *</label>
+                                <input type="text" id="roadName" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="roadDistrict">Kecamatan *</label>
+                                <select id="roadDistrict" required>
+                                    <option value="">Pilih Kecamatan</option>
+                                    <option value="menteng">Menteng</option>
+                                    <option value="tanah_abang">Tanah Abang</option>
+                                    <option value="setiabudi">Setiabudi</option>
+                                    <option value="kebayoran_baru">Kebayoran Baru</option>
+                                    <option value="cilandak">Cilandak</option>
+                                    <option value="tebet">Tebet</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="conditionSDI">Kondisi SDI *</label>
+                                <select id="conditionSDI" required>
+                                    <option value="">Pilih Kondisi</option>
+                                    <option value="baik">Baik</option>
+                                    <option value="sedang">Sedang</option>
+                                    <option value="rusak_ringan">Rusak Ringan</option>
+                                    <option value="rusak_berat">Rusak Berat</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="conditionPCI">Kondisi PCI</label>
+                                <select id="conditionPCI">
+                                    <option value="">Pilih Kondisi</option>
+                                    <option value="excellent">Excellent</option>
+                                    <option value="good">Good</option>
+                                    <option value="fair">Fair</option>
+                                    <option value="poor">Poor</option>
+                                    <option value="very_poor">Very Poor</option>
+                                    <option value="serious">Serious</option>
+                                    <option value="failed">Failed</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="latitude">Latitude *</label>
+                                <input type="number" id="latitude" step="any" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="longitude">Longitude *</label>
+                                <input type="number" id="longitude" step="any" required>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="roadWidth">Lebar Jalan (m)</label>
+                                <input type="number" id="roadWidth" step="0.1" min="0">
+                            </div>
+                            <div class="form-group">
+                                <label for="roadLength">Panjang Jalan (m)</label>
+                                <input type="number" id="roadLength" step="0.1" min="0">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="roadDescription">Deskripsi</label>
+                            <textarea id="roadDescription" rows="3"></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <button type="button" id="pickLocationBtn" class="btn btn-secondary">
+                                <i class="fas fa-map-marker-alt"></i> Pilih Lokasi di Peta
+                            </button>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Simpan Data Jalan
+                            </button>
+                            <button type="button" id="resetForm" class="btn btn-secondary">
+                                <i class="fas fa-redo"></i> Reset Form
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Pengaturan Section -->
+            <section id="pengaturan" class="content-section">
+                <div class="section-header">
+                    <h2>Pengaturan</h2>
+                    <p>Pengaturan sistem dan akun admin</p>
+                </div>
+
+                <div class="settings-container">
+                    <div class="settings-card">
+                        <h3><i class="fas fa-user-cog"></i> Akun Admin</h3>
+                        <div class="settings-form">
+                            <div class="form-group">
+                                <label>Nama Lengkap</label>
+                                <input type="text" id="adminFullName" value="Administrator">
+                            </div>
+                            <div class="form-group">
+                                <label>Email</label>
+                                <input type="email" id="adminEmail" value="admin@jalanrusak.id" readonly>
+                            </div>
+                            <button class="btn btn-primary">
+                                <i class="fas fa-save"></i> Update Profil
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="settings-card">
+                        <h3><i class="fas fa-database"></i> Data Management</h3>
+                        <div class="settings-actions">
+                            <button class="btn btn-secondary" id="exportData">
+                                <i class="fas fa-download"></i> Ekspor Data
+                            </button>
+                            <button class="btn btn-secondary" id="importData">
+                                <i class="fas fa-upload"></i> Impor Data
+                            </button>
+                            <button class="btn btn-danger" id="clearData">
+                                <i class="fas fa-trash"></i> Hapus Data
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="settings-card">
+                        <h3><i class="fas fa-info-circle"></i> Informasi Sistem</h3>
+                        <div class="system-info">
+                            <div class="info-item">
+                                <span class="info-label">Versi Sistem</span>
+                                <span class="info-value">1.0.0</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Total Data</span>
+                                <span class="info-value" id="systemTotalData">0</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Terakhir Update</span>
+                                <span class="info-value" id="lastUpdate">-</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- Modal untuk Detail Laporan -->
+    <div id="reportModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Detail Laporan</h3>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body" id="reportModalBody">
+                <!-- Isi akan diisi oleh JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal untuk Edit Data Jalan -->
+    <div id="editRoadModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Edit Data Jalan</h3>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="editRoadForm">
+                    <input type="hidden" id="editRoadId">
+                    <div class="form-group">
+                        <label>Nama Jalan</label>
+                        <input type="text" id="editRoadName" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Kecamatan</label>
+                        <select id="editRoadDistrict" required>
+                            <option value="menteng">Menteng</option>
+                            <option value="tanah_abang">Tanah Abang</option>
+                            <option value="setiabudi">Setiabudi</option>
+                            <option value="kebayoran_baru">Kebayoran Baru</option>
+                            <option value="cilandak">Cilandak</option>
+                            <option value="tebet">Tebet</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Kondisi SDI</label>
+                        <select id="editConditionSDI" required>
+                            <option value="baik">Baik</option>
+                            <option value="sedang">Sedang</option>
+                            <option value="rusak_ringan">Rusak Ringan</option>
+                            <option value="rusak_berat">Rusak Berat</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Kondisi PCI</label>
+                        <select id="editConditionPCI">
+                            <option value="">Pilih Kondisi</option>
+                            <option value="excellent">Excellent</option>
+                            <option value="good">Good</option>
+                            <option value="fair">Fair</option>
+                            <option value="poor">Poor</option>
+                            <option value="very_poor">Very Poor</option>
+                            <option value="serious">Serious</option>
+                            <option value="failed">Failed</option>
+                        </select>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
+                        <button type="button" class="btn btn-secondary close-modal">Batal</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal untuk Pilih Lokasi -->
+    <div id="locationModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Pilih Lokasi di Peta</h3>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div id="locationPickerMap"></div>
+                <div class="location-info">
+                    <p>Koordinat terpilih: <span id="selectedLocation">Belum dipilih</span></p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="useLocationBtn" class="btn btn-primary">Gunakan Lokasi</button>
+                <button class="btn btn-secondary close-modal">Batal</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script type="module" src="../shared/supabase.js"></script>
+    <script type="module" src="../shared/map.js"></script>
+    <script type="module" src="admin.js"></script>
+</body>
+
+</html>
