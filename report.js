@@ -1,5 +1,5 @@
 // public/report.js
-import { addPublicReport, uploadImage } from "../shared/supabase.js";
+import { addPublicReport, uploadImage } from "./shared/supabase.js";
 
 document.addEventListener("DOMContentLoaded", function () {
   // Setup form submission

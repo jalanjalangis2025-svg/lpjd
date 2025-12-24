@@ -1,6 +1,6 @@
 // public/public.js
-import { getRoads, getPublicReports, supabase } from "../shared/supabase.js";
-import { initMap, updateMapLayers } from "../shared/map.js";
+import { getRoads, getPublicReports, supabase } from "./shared/supabase.js";
+import { initMap, updateMapLayers } from "./shared/map.js";
 
 document.addEventListener("DOMContentLoaded", async function () {
   // Inisialisasi peta
