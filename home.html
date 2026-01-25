@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <link rel="stylesheet" href="css/common.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+</head>
+
+<body style="opacity: 0; transition: opacity 0.5s;">
+    <!-- Global Loader (Init Active) -->
+    <div class="page-loader active" id="mainLoader">
+        <div class="spinner"></div>
+        <div class="loader-text">Memuat Dashboard...</div>
+    </div>
+
+    <!-- Logout Confirmation Modal -->
+    <div class="modal-overlay glass-modal" id="logoutModal"
+        style="display: none; opacity: 0; transition: opacity 0.3s;">
+        <div class="modal-content glass-content">
+            <div style="font-size: 3rem; color: #ef4444; margin-bottom: 20px;">
+                <i class="fas fa-sign-out-alt"></i>
+            </div>
+            <h2 style="margin-bottom: 10px; color: #1e293b;">Yakin ingin keluar?</h2>
+            <p style="color: #64748b; margin-bottom: 30px;">Anda perlu login kembali untuk mengakses panel admin.</p>
+
+            <div style="display: flex; gap: 15px; justify-content: center;">
+                <button onclick="closeLogoutModal()" class="btn-confirm-no">Batal</button>
+                <button onclick="processLogout()" class="btn-confirm-yes">Ya, Keluar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navbar -->
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+            <div class="brand">
+                <i class="fas fa-chart-pie"></i> Admin Panel
+            </div>
+            <button class="menu-toggle" onclick="toggleMenu()">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+
+        <div class="nav-menu" id="navMenu">
+            <a onclick="switchView('dashboard'); toggleMenu()" class="nav-item active" id="nav-dashboard">
+                <i class="fas fa-home"></i> Dashboard
+            </a>
+            <a onclick="switchView('map'); toggleMenu()" class="nav-item" id="nav-map">
+                <i class="fas fa-map"></i> Maps
+            </a>
+            <a onclick="switchView('reports'); toggleMenu()" class="nav-item" id="nav-reports">
+                <i class="fas fa-list-alt"></i> Data Laporan
+            </a>
+            <button onclick="confirmLogout()" class="btn-logout" style="margin-left: 10px;">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </button>
+        </div>
+    </nav>
+
+    <!-- Global Loader (Hidden by default) -->
+    <div class="page-loader">
+        <div class="spinner"></div>
+        <div class="loader-text">Logging out...</div>
+    </div>
+
+    <script>
+        async function logoutWithEffect() {
+            const loader = document.querySelector('.page-loader');
+            if (loader) loader.classList.add('active');
+
+            // Artificial delay for smooth UX
+            await new Promise(r => setTimeout(r, 800));
+
+            if (window.sb) {
+                await sb.auth.signOut();
+            }
+
+            window.location.href = '/index.html';
+        }
+        window.logout = logoutWithEffect;
+    </script>
+
+    <div class="container">
+
+        <!-- DASHBOARD VIEW -->
+        <div id="dashboard-view" class="view-section active">
+            <h2 style="margin-bottom: 20px;">Ringkasan Statistik</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon blue">
+                        <i class="fas fa-clipboard-list"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="statTotal">0</h3>
+                        <p>Total Laporan Masuk</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon yellow">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="statPending">0</h3>
+                        <p>Menunggu Verifikasi</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon green">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="statVerified">0</h3>
+                        <p>Laporan Terverifikasi</p>
+                    </div>
+                </div>
+            </div>
+
+            <div
+                style="margin-top: 40px; background: white; padding: 2rem; border-radius: 12px; border: 1px solid #e2e8f0;">
+                <h3><i class="fas fa-info-circle"></i> Informasi Admin</h3>
+                <p style="color: #64748b; margin-top: 10px;">
+                    Selamat datang di Panel Admin. Gunakan menu <strong>"Data Laporan"</strong> yang ada di atas untuk
+                    mengelola laporan masuk.
+                    Anda juga dapat melihat dan mengelola sebaran laporan di menu <strong>"Maps"</strong>.
+                </p>
+            </div>
+        </div>
+
+        <!-- MAP VIEW -->
+        <div id="map-view" class="view-section">
+            <h2 style="margin-bottom: 20px;">Maps Admin (Kelola Data)</h2>
+            <div id="admin-map"
+                style="height: 500px; width: 100%; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 30px;">
+            </div>
+
+            <!-- Table for Map View -->
+            <div class="actions-toolbar">
+                <div style="font-weight: 700; font-size: 1.2rem;">Data Laporan di Peta</div>
+            </div>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Tanggal</th>
+                            <th>Sumber</th>
+                            <th>Pelapor</th>
+                            <th>Lokasi</th>
+                            <th>Keterangan</th>
+                            <th>Status</th>
+                            <th style="text-align: center;">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="mapReportTable">
+                        <tr>
+                            <td colspan="7" style="text-align: center; padding: 3rem; color: #94a3b8;">
+                                <i class="fas fa-circle-notch fa-spin"></i> Memuat data...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- REPORTS VIEW -->
+        <div id="reports-view" class="view-section">
+            <div class="actions-toolbar">
+                <div style="font-weight: 700; font-size: 1.2rem;">Manajemen Data</div>
+
+                <div style="display: flex; gap: 15px;">
+                    <button class="action-btn btn-primary" onclick="window.location.href='/report-admin'">
+                        <i class="fas fa-plus"></i> Input Manual
+                    </button>
+                    <button class="action-btn btn-secondary" onclick="window.open('/map', '_blank')">
+                        <i class="fas fa-map"></i> Lihat Peta
+                    </button>
+                </div>
+            </div>
+
+            <div class="tabs">
+                <button class="tab-btn active" id="tab-public" onclick="switchReportTab('public')">
+                    <i class="fas fa-users"></i> Laporan Warga
+                </button>
+                <button class="tab-btn" id="tab-admin" onclick="switchReportTab('admin')">
+                    <i class="fas fa-hard-hat"></i> Data Teknis Dinas
+                </button>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead id="tableHead">
+                        <!-- Dynamic Headers -->
+                    </thead>
+                    <tbody id="reportTable">
+                        <tr>
+                            <td colspan="7" style="text-align: center; padding: 3rem; color: #94a3b8;">
+                                <i class="fas fa-circle-notch fa-spin"></i> Memuat data...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Action Modal (Clean White) -->
+    <style>
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            background: #f1f5f9;
+            padding: 5px;
+            border-radius: 8px;
+            width: fit-content;
+        }
+
+        .tab-btn {
+            padding: 10px 20px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            border-radius: 6px;
+            font-weight: 600;
+            color: #64748b;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            background: white;
+            color: #0f172a;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .badge-sdi {
+            background: #e0f2fe;
+            color: #0284c7;
+        }
+
+        .badge-pci {
+            background: #f0fdf4;
+            color: #16a34a;
+        }
+    </style>
+    <div class="modal-overlay" id="actionModal">
+        <div class="modal-content">
+            <button class="btn-modal-close"
+                style="position: absolute; top: 15px; right: 15px; background:none; border:none; font-size: 1.2rem; cursor: pointer;"
+                onclick="closeModal()">
+                <i class="fas fa-times"></i>
+            </button>
+            <div style="text-align: center; padding: 2rem;">
+                <div style="font-size: 3rem; color: #3b82f6; margin-bottom: 1rem;">
+                    <i class="fas fa-cog"></i>
+                </div>
+                <h2 class="modal-title" style="margin-bottom: 0.5rem;">Kelola Laporan</h2>
+                <p class="modal-desc" id="modalDesc" style="margin-bottom: 2rem;">Pilih tindakan untuk laporan ini.</p>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <button onclick="performAction('verify')"
+                        style="padding: 12px; border-radius: 8px; border: none; background: #10b981; color: white; cursor: pointer; font-weight: 600;">
+                        <i class="fas fa-check"></i> Verifikasi
+                    </button>
+                    <button onclick="performAction('reject')"
+                        style="padding: 12px; border-radius: 8px; border: 1px solid #ef4444; background: white; color: #ef4444; cursor: pointer; font-weight: 600;">
+                        <i class="fas fa-times"></i> Tolak
+                    </button>
+                    <button onclick="performAction('process')"
+                        style="padding: 12px; border-radius: 8px; border: 1px solid #3b82f6; background: white; color: #3b82f6; cursor: pointer; font-weight: 600;">
+                        <i class="fas fa-edit"></i> Edit
+                    </button>
+                    <button onclick="performAction('delete')"
+                        style="padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; background: #f1f5f9; color: #64748b; cursor: pointer; font-weight: 600;">
+                        <i class="fas fa-trash"></i> Hapus
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/supabase.js"></script>
+    <script src="js/guard.js"></script>
+    <script src="js/admin-map.js"></script>
+    <script>
+        let allReports = [];
+        let selectedReportId = null;
+        let currentTab = 'public'; // 'public' or 'admin'
+
+        // Dashboard Entry Logic
+        document.addEventListener('DOMContentLoaded', () => {
+            // Init: Fade in body
+            document.body.style.opacity = '1';
+
+            // Load Data & Handle Loader
+            loadReports().then(() => {
+                setTimeout(() => {
+                    const loader = document.getElementById('mainLoader');
+                    if (loader) {
+                        loader.classList.remove('active');
+                        setTimeout(() => loader.remove(), 500);
+                    }
+                }, 800); // Minimum display time for effect
+            });
+        });
+
+        // Logout Flow
+        function confirmLogout() {
+            const modal = document.getElementById('logoutModal');
+            if (modal) {
+                modal.style.display = 'flex';
+                // force reflow
+                modal.offsetHeight;
+                modal.style.opacity = '1';
+                modal.classList.add('active');
+            }
+        }
+
+        function closeLogoutModal() {
+            const modal = document.getElementById('logoutModal');
+            if (modal) {
+                modal.style.opacity = '0';
+                modal.classList.remove('active');
+                setTimeout(() => modal.style.display = 'none', 300);
+            }
+        }
+
+        async function processLogout() {
+            closeLogoutModal();
+
+            // Re-use loader for exit transition
+            let loader = document.getElementById('mainLoader');
+            if (!loader) {
+                loader = document.createElement('div');
+                loader.className = 'page-loader';
+                loader.id = 'mainLoader';
+                loader.innerHTML = '<div class="spinner"></div><div class="loader-text">Logging out...</div>';
+                document.body.appendChild(loader);
+            } else {
+                // Should not happen if removed, but just in case
+                // If mainLoader was removed, recreate it. If element exists but hidden/removed from DOM?
+                // The previous code removes it from DOM. So we likely need to create or re-append if variable held ref.
+                // Safest is create new if null.
+            }
+
+            // If loader was removed from DOM, getElementById returns null.
+            if (!document.getElementById('mainLoader')) {
+                loader = document.createElement('div');
+                loader.className = 'page-loader';
+                loader.id = 'mainLoader';
+                loader.innerHTML = '<div class="spinner"></div><div class="loader-text">Logging out...</div>';
+                document.body.appendChild(loader);
+            } else {
+                loader = document.getElementById('mainLoader');
+                loader.querySelector('.loader-text').innerText = "Logging out...";
+            }
+
+            // Force reflow and active
+            loader.offsetHeight;
+            loader.classList.add('active');
+
+            await new Promise(r => setTimeout(r, 1000));
+
+            if (window.sb) {
+                await sb.auth.signOut();
+            }
+            window.location.href = '/index.html';
+        }
+
+        function toggleMenu() {
+            const menu = document.getElementById('navMenu');
+            menu.classList.toggle('active');
+        }
+
+        // View Switcher Logic
+        function switchView(viewName) {
+            // Update Menu Active State
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            document.getElementById(`nav-${viewName}`).classList.add('active');
+
+            // Toggle Sections
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            document.getElementById(`${viewName}-view`).classList.add('active');
+
+            // Fix map size if switching to map
+            if (viewName === 'map') {
+                if (window.renderAdminMap) {
+                    renderAdminMap(allReports);
+                }
+                refreshMapSize();
+            }
+        }
+
+        function switchReportTab(type) {
+            currentTab = type;
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`tab-${type}`).classList.add('active');
+            filterAndRender();
+        }
+
+        async function loadReports() {
+            if (!window.sb) {
+                setTimeout(loadReports, 500);
+                return;
+            }
+
+            const { data, error } = await sb
+                .from('road_reports')
+                .select('*')
+                .is('deleted_at', null)
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error("Error:", error);
+                return;
+            }
+
+            allReports = data || [];
+            updateStats();
+            filterAndRender();
+
+            if (window.renderAdminMap) {
+                renderAdminMap(allReports);
+            }
+        }
+
+        function updateStats() {
+            document.getElementById('statTotal').innerText = allReports.length;
+            document.getElementById('statPending').innerText = allReports.filter(r => r.status === 'pending').length;
+            document.getElementById('statVerified').innerText = allReports.filter(r => r.status === 'verified').length;
+        }
+
+        function filterAndRender() {
+            const filteredData = allReports.filter(item => item.report_source === currentTab);
+            renderTable(filteredData, currentTab);
+        }
+
+        function renderTable(data, type) {
+            const tbody = document.getElementById('reportTable');
+            const thead = document.getElementById('tableHead');
+            if (!tbody || !thead) return;
+
+            let headerHtml = '';
+            if (type === 'admin') {
+                headerHtml = `
+                    <tr>
+                        <th>Tanggal</th>
+                        <th>Kecamatan</th>
+                        <th>Dimensi (PxL)</th>
+                        <th>Nilai SDI</th>
+                        <th>Nilai PCI</th>
+                        <th>Status</th>
+                        <th style="text-align: center;">Aksi</th>
+                    </tr>
+                `;
+            } else {
+                headerHtml = `
+                    <tr>
+                        <th>Tanggal</th>
+                        <th>Pelapor</th>
+                        <th>Kontak</th>
+                        <th>Lokasi</th>
+                        <th>Keterangan</th>
+                        <th>Status</th>
+                        <th style="text-align: center;">Aksi</th>
+                    </tr>
+                `;
+            }
+            thead.innerHTML = headerHtml;
+
+            if (data.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 3rem; color: #94a3b8;">
+                            <i class="far fa-folder-open" style="font-size: 2rem; margin-bottom: 1rem; display: block;"></i>
+                            Tidak ada data ${type === 'admin' ? 'dinas' : 'warga'}.
+                        </td>
+                    </tr>`;
+                return;
+            }
+
+            let contentHtml = '';
+            data.forEach(item => {
+                const date = new Date(item.created_at).toLocaleDateString("id-ID", {
+                    day: 'numeric', month: 'short', year: 'numeric'
+                });
+
+                let statusBadge = '';
+                if (item.status === 'verified') statusBadge = `<span class="badge status-verified">Verified</span>`;
+                else if (item.status === 'rejected') statusBadge = `<span class="badge status-rejected">Rejected</span>`;
+                else statusBadge = `<span class="badge status-pending">Pending</span>`;
+
+                let row = '';
+
+                if (type === 'admin') {
+                    const sdi = item.sdi_value ? `<span class="badge badge-sdi">${item.sdi_value} (${item.sdi_category || '-'})</span>` : '-';
+                    const pci = item.pci_value ? `<span class="badge badge-pci">${item.pci_value} (${item.pci_category || '-'})</span>` : '-';
+                    const dims = (item.damage_length && item.damage_width) ? `${item.damage_length}m x ${item.damage_width}m` : '-';
+
+                    row = `
+                        <tr>
+                            <td style="font-weight: 500;">${date}</td>
+                            <td>${item.district}</td>
+                            <td>${dims}</td>
+                            <td>${sdi}</td>
+                            <td>${pci}</td>
+                            <td>${statusBadge}</td>
+                            <td style="text-align: center;">
+                                <button onclick="openActionModal(${item.id})" class="action-btn-small" style="background: white; border: 1px solid #e2e8f0; color: #3b82f6; cursor: pointer; padding: 6px 12px; border-radius: 6px;">
+                                    <i class="fas fa-cog"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                } else {
+                    row = `
+                        <tr>
+                            <td style="font-weight: 500;">${date}</td>
+                            <td style="font-weight: 600;">${item.reporter_name || 'Anonim'}</td>
+                            <td style="font-size: 0.8em; color: #64748b;">${item.reporter_contact || '-'}</td>
+                            <td>${item.district}</td>
+                            <td style="max-width: 250px;">
+                                <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${item.description || '-'}</div>
+                            </td>
+                            <td>${statusBadge}</td>
+                            <td style="text-align: center;">
+                                <button onclick="openActionModal(${item.id})" class="action-btn-small" style="background: white; border: 1px solid #e2e8f0; color: #3b82f6; cursor: pointer; padding: 6px 12px; border-radius: 6px;">
+                                    <i class="fas fa-cog"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                }
+                contentHtml += row;
+            });
+            tbody.innerHTML = contentHtml;
+        }
+
+        function openActionModal(id) {
+            selectedReportId = id;
+            const report = allReports.find(r => r.id === id);
+            document.getElementById('modalDesc').innerText = `Laporan di ${report.district} oleh ${report.reporter_name || 'Admin'}`;
+            document.getElementById('actionModal').classList.add('active');
+            document.getElementById('actionModal').style.display = 'flex';
+            document.getElementById('actionModal').style.opacity = '1';
+        }
+
+        function closeModal() {
+            document.getElementById('actionModal').style.display = 'none';
+            document.getElementById('actionModal').style.opacity = '0';
+            selectedReportId = null;
+        }
+
+        async function performAction(action) {
+            if (!selectedReportId) return;
+
+            const id = selectedReportId;
+            let updateData = {};
+
+            if (action === 'verify') updateData = { status: 'verified' };
+            else if (action === 'reject') updateData = { status: 'rejected' };
+            else if (action === 'process') {
+                window.location.href = `/report-admin?id=${id}`;
+                return;
+            } else if (action === 'delete') {
+                if (!confirm("Hapus data ini? (Data akan dipindahkan ke sampah)")) return;
+                const { error } = await sb.from('road_reports').update({ deleted_at: new Date() }).eq('id', id);
+                if (!error) { closeModal(); loadReports(); }
+                return;
+            }
+
+            const { error } = await sb.from('road_reports').update(updateData).eq('id', id);
+            if (!error) { closeModal(); loadReports(); }
+        }
+    </script>
+</body>
+
+</html>

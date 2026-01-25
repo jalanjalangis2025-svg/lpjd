@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lapor Jalan - Pemerintah Kabupaten Demak</title>
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/landing.css">
+</head>
+
+<body>
+
+  <!-- Navigation Bar -->
+  <nav class="navbar">
+    <div class="container">
+      <a href="index.html" class="brand">
+        <i class="fas fa-road"></i>
+        <span>LaporJalan <span style="font-weight: 400; font-size: 0.9em; opacity: 0.8;">| Kab. Demak</span></span>
+      </a>
+
+      <button class="menu-toggle" onclick="toggleMenu()">
+        <i class="fas fa-bars"></i>
+      </button>
+
+      <div class="nav-menu" id="navMenu">
+        <a href="index.html" class="nav-link active">Beranda</a>
+        <a href="#tata-cara" class="nav-link" onclick="toggleMenu()">Tata Cara</a>
+        <a href="map.html" class="nav-link">Peta Persebaran</a>
+        <a href="report-public.html" class="nav-link">Lapor Sekarang</a>
+
+        <!-- Mobile Login Button (moved inside for mobile view) -->
+        <div class="mobile-user-actions">
+          <a href="home.html" class="btn-login"><i class="fas fa-lock"></i> Masuk Admin</a>
+        </div>
+      </div>
+
+      <div class="user-actions">
+        <a href="home.html" class="btn-login"><i class="fas fa-lock"></i> Masuk Admin</a>
+      </div>
+    </div>
+  </nav>
+
+  <script>
+    function toggleMenu() {
+      const menu = document.getElementById('navMenu');
+      menu.classList.toggle('active');
+    }
+  </script>
+
+  <!-- Hero Section -->
+  <header class="hero">
+    <div class="container hero-content">
+      <h1>Layanan Lapor Kerusakan Jalan<br>Kabupaten Demak</h1>
+      <p>Sampaikan aspirasi Anda untuk infrastruktur yang lebih baik. Laporkan kerusakan jalan secara online, cepat, dan
+        transparan.</p>
+      <a href="report-public.html" class="btn-cta">
+        <i class="fas fa-edit"></i> Buat Laporan Baru
+      </a>
+    </div>
+  </header>
+
+  <!-- Stats Section -->
+  <section class="stats-section">
+    <div class="container">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-number" id="totalReports">0</div>
+          <div class="stat-label">Laporan Masuk</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number verified" id="verifiedReports">0</div>
+          <div class="stat-label">Laporan Diterima</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number rejected" id="rejectedReports">0</div>
+          <div class="stat-label">Laporan Ditolak</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Step / Info Section -->
+  <section class="info-section" id="tata-cara">
+    <div class="container">
+      <div class="section-header">
+        <h2>Alur Pengaduan</h2>
+        <p>Ikuti langkah mudah berikut untuk melaporkan kerusakan jalan</p>
+      </div>
+
+      <div class="cards-grid">
+        <!-- Step 1 -->
+        <div class="info-card">
+          <div class="card-icon">
+            <i class="fas fa-camera"></i>
+          </div>
+          <h3>1. Foto & Lokasi</h3>
+          <p>Ambil foto kerusakan jalan dan pastikan lokasi Anda terdeteksi oleh GPS (Geotagging).</p>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="info-card">
+          <div class="card-icon">
+            <i class="fas fa-pen-to-square"></i>
+          </div>
+          <h3>2. Isi Formulir</h3>
+          <p>Lengkapi formulir pengaduan dengan detail kerusakan dan pilih kecamatan yang sesuai.</p>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="info-card">
+          <div class="card-icon">
+            <i class="fas fa-check-circle"></i>
+          </div>
+          <h3>3. Verifikasi & Tindak Lanjut</h3>
+          <p>Laporan Anda akan diverifikasi oleh Admin dan diteruskan ke dinas terkait untuk perbaikan.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-col">
+          <h4>Pemerintah Kabupaten Demak</h4>
+          <ul class="contact-info">
+            <li><i class="fas fa-map-marker-alt"></i> Jl. Kyai Singkil No.7, Demak</li>
+            <li><i class="fas fa-phone"></i> (0291) 685xxx</li>
+            <li><i class="fas fa-envelope"></i> info@demakkab.go.id</li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4>Tautan Cepat</h4>
+          <ul>
+            <li><a href="index.html">Beranda</a></li>
+            <li><a href="report-public.html">Buat Laporan</a></li>
+            <li><a href="map.html">Peta Jalan Rusak</a></li>
+            <li><a href="home.html">Login Admin</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4>Media Sosial</h4>
+          <div style="display: flex; gap: 15px;">
+            <a href="#"><i class="fab fa-facebook fa-lg"></i></a>
+            <a href="#"><i class="fab fa-twitter fa-lg"></i></a>
+            <a href="#"><i class="fab fa-instagram fa-lg"></i></a>
+            <a href="#"><i class="fab fa-youtube fa-lg"></i></a>
+          </div>
+        </div>
+      </div>
+      <div class="copyright">
+        &copy; 2024 Dinas Pekerjaan Umum dan Penataan Ruang Kabupaten Demak. All Rights Reserved.
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/landing.js"></script>
+</body>
+
+</html>

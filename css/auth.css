@@ -1,0 +1,264 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+
+:root {
+    --primary-blue: #0056b3;
+    --primary-dark: #004494;
+    --text-main: #1e293b;
+    --text-muted: #64748b;
+    --border-color: #e2e8f0;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    height: 100vh;
+    overflow: hidden;
+    background-color: #f8fafc;
+}
+
+.login-container {
+    display: flex;
+    height: 100%;
+    width: 100%;
+}
+
+/* Left Side - Brand / Image */
+.login-left {
+    width: 45%;
+    background: linear-gradient(135deg, #0056b3 0%, #004494 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 4rem;
+    color: white;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Decorative Circle */
+.login-left::after {
+    content: '';
+    position: absolute;
+    top: -10%;
+    right: -10%;
+    width: 300px;
+    height: 300px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+}
+
+.brand-content {
+    position: relative;
+    z-index: 2;
+    max-width: 500px;
+}
+
+.brand-logo {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 30px;
+    font-size: 1.8rem;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+}
+
+.brand-logo i {
+    color: #facc15;
+    font-size: 2rem;
+}
+
+.brand-quote {
+    font-size: 2.8rem;
+    font-weight: 800;
+    line-height: 1.2;
+    margin-bottom: 25px;
+}
+
+.brand-desc {
+    font-size: 1.15rem;
+    color: rgba(255, 255, 255, 0.85);
+    line-height: 1.6;
+}
+
+/* Right Side - Form */
+.login-right {
+    width: 55%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: white;
+    padding: 2rem;
+}
+
+.login-box {
+    width: 100%;
+    max-width: 420px;
+    padding: 40px;
+    /* Optional: Add card look if desired, but clean is also good. 
+       Let's keep it clean on the right side for 'split' style, 
+       but nice spacing. 
+    */
+}
+
+.login-header {
+    margin-bottom: 40px;
+}
+
+.login-header h2 {
+    font-size: 2rem;
+    color: var(--text-main);
+    margin-bottom: 12px;
+    font-weight: 700;
+}
+
+.login-header p {
+    color: var(--text-muted);
+    font-size: 1rem;
+}
+
+.form-group {
+    margin-bottom: 25px;
+}
+
+.form-group label {
+    display: block;
+    font-weight: 600;
+    color: var(--text-main);
+    margin-bottom: 10px;
+    font-size: 0.95rem;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 14px 16px;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    font-size: 1rem;
+    transition: all 0.2s;
+    outline: none;
+    background: #f8fafc;
+    color: var(--text-main);
+}
+
+.form-group input:focus {
+    border-color: var(--primary-blue);
+    background: white;
+    box-shadow: 0 0 0 4px rgba(0, 86, 179, 0.1);
+}
+
+.password-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.password-wrapper input {
+    padding-right: 45px;
+}
+
+.toggle-password {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: var(--text-muted);
+    background: none;
+    border: none;
+    font-size: 1.1rem;
+    padding: 5px;
+    transition: color 0.2s;
+}
+
+.toggle-password:hover {
+    color: var(--primary-blue);
+}
+
+.btn-login {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(135deg, #0056b3, #004494);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 1.05rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 25px;
+    box-shadow: 0 4px 6px -1px rgba(0, 86, 179, 0.2);
+}
+
+.btn-login:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 10px -1px rgba(0, 86, 179, 0.3);
+}
+
+.btn-login:active {
+    transform: translateY(0);
+}
+
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 0.95rem;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+
+.back-link:hover {
+    color: var(--primary-blue);
+}
+
+.message {
+    text-align: center;
+    margin-top: 20px;
+    color: #ef4444;
+    font-size: 0.9rem;
+    min-height: 20px;
+    font-weight: 500;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+    .login-container {
+        flex-direction: column;
+        overflow-y: auto;
+    }
+
+    .login-left {
+        width: 100%;
+        height: auto;
+        min-height: 250px;
+        padding: 2.5rem;
+        flex-shrink: 0;
+    }
+
+    .brand-quote {
+        font-size: 1.8rem;
+    }
+
+    .brand-desc {
+        font-size: 1rem;
+    }
+
+    .login-right {
+        width: 100%;
+        padding: 2rem;
+        flex-grow: 1;
+    }
+
+    .login-box {
+        padding: 0;
+    }
+}
