@@ -39,6 +39,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (adminForm) {
         adminForm.addEventListener('submit', (e) => submitReport(e, 'admin', reportId));
     }
+
+    // Auto-set Date for Public Form
+    const dateField = document.getElementById('report_date_display');
+    if (dateField) {
+        const now = new Date();
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        dateField.value = now.toLocaleDateString('id-ID', options);
+    }
 });
 
 async function loadReportData(id) {
