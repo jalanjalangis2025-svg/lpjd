@@ -1,0 +1,21 @@
+{
+  "name": "lpjd-main",
+  "version": "1.0.0",
+  "description": "Lapor Jalan - Pemerintah Kabupaten Demak",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "live-server ."
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "@turf/turf": "^7.3.4",
+    "jspdf": "^2.5.1",
+    "jspdf-autotable": "^3.5.31",
+    "leaflet": "^1.9.4",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "live-server": "^1.2.2"
+  }
+}

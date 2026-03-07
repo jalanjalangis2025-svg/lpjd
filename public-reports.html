@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daftar Laporan Warga - LaporJalan Kab. Demak</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/landing.css">
+    <style>
+        .reports-container {
+            padding: 100px 0 60px;
+            background-color: #f8f9fa;
+            min-height: 80vh;
+        }
+
+        .reports-header {
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+        .reports-header h1 {
+            color: var(--primary-blue);
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        /* Filter Tabs */
+        .filter-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+            padding: 5px;
+            background: #e2e8f0;
+            width: fit-content;
+            margin-left: auto;
+            margin-right: auto;
+            border-radius: 10px;
+        }
+
+        .filter-tab {
+            padding: 10px 24px;
+            border: none;
+            background: transparent;
+            color: #64748b;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .filter-tab.active {
+            background: white;
+            color: var(--primary-blue);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .table-wrapper {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.95rem;
+        }
+
+        th {
+            background-color: #f1f5f9;
+            color: #475569;
+            font-weight: 600;
+            text-align: left;
+            padding: 16px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        td {
+            padding: 16px;
+            border-bottom: 1px solid #f1f5f9;
+            vertical-align: top;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: capitalize;
+        }
+
+        .status-pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-verified {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status-rejected {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .btn-view {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: white;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            color: #475569;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-view:hover {
+            background: #f8fafc;
+            border-color: var(--primary-blue);
+            color: var(--primary-blue);
+        }
+
+        .btn-map {
+            color: #ef4444;
+        }
+
+        .btn-map:hover {
+            border-color: #ef4444;
+            background: #fff5f5;
+        }
+
+        .photo-thumbnail {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            max-width: 90%;
+            max-height: 90%;
+            position: relative;
+        }
+
+        .modal-content img {
+            max-width: 100%;
+            max-height: 80vh;
+            border-radius: 8px;
+            display: block;
+        }
+
+        .btn-close-modal {
+            position: absolute;
+            top: -40px;
+            right: 0;
+            color: white;
+            background: none;
+            border: none;
+            font-size: 2rem;
+            cursor: pointer;
+        }
+
+        @media (max-width: 768px) {
+
+            th,
+            td {
+                padding: 12px;
+            }
+
+            .hero h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="container">
+            <a href="index.html" class="brand">
+                <i class="fas fa-road"></i>
+                <span>LaporJalan <span style="font-weight: 400; font-size: 0.9em; opacity: 0.8;">| Kab.
+                        Demak</span></span>
+            </a>
+
+            <button class="menu-toggle" onclick="toggleMenu()">
+                <i class="fas fa-bars"></i>
+            </button>
+
+            <div class="nav-menu" id="navMenu">
+                <a href="index.html" class="nav-link">Beranda</a>
+                <a href="index.html#tata-cara" class="nav-link">Tata Cara</a>
+                <a href="map.html" class="nav-link">Peta Persebaran</a>
+                <a href="public-reports" class="nav-link active">Laporan Warga</a>
+                <a href="report-public.html" class="nav-link">Lapor Sekarang</a>
+
+                <div class="mobile-user-actions">
+                    <a href="home.html" class="btn-login"><i class="fas fa-lock"></i> Masuk Admin</a>
+                </div>
+            </div>
+
+            <div class="user-actions">
+                <a href="home.html" class="btn-login"><i class="fas fa-lock"></i> Masuk Admin</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="reports-container">
+        <div class="container">
+            <div class="reports-header">
+                <h1>Laporan Warga</h1>
+                <p>Daftar laporan kerusakan jalan yang disampaikan oleh masyarakat secara transparan.</p>
+            </div>
+
+            <div class="filter-tabs">
+                <button class="filter-tab active" data-status="all" onclick="setFilter('all')">Semua</button>
+                <button class="filter-tab" data-status="verified" onclick="setFilter('verified')">Diterima</button>
+                <button class="filter-tab" data-status="rejected" onclick="setFilter('rejected')">Ditolak</button>
+                <button class="filter-tab" data-status="pending" onclick="setFilter('pending')">Menunggu</button>
+            </div>
+
+            <div class="table-wrapper">
+                <table id="reportsTable">
+                    <thead>
+                        <tr>
+                            <th>Tanggal</th>
+                            <th>Pelapor</th>
+                            <th>Lokasi</th>
+                            <th>Keterangan</th>
+                            <th>Status</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reportsBody">
+                        <tr>
+                            <td colspan="6" style="text-align: center; padding: 40px;">
+                                <i class="fas fa-spinner fa-spin fa-2x"
+                                    style="color: var(--primary-blue); margin-bottom: 10px; display: block;"></i>
+                                Memuat data laporan...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- Photo Modal -->
+    <div class="modal-overlay" id="photoModal">
+        <div class="modal-content">
+            <button class="btn-close-modal" onclick="closeModal()">&times;</button>
+            <img id="modalImage" src="" alt="Foto Laporan">
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-col">
+                    <h4>Pemerintah Kabupaten Demak</h4>
+                    <ul class="contact-info">
+                        <li><i class="fas fa-map-marker-alt"></i> Jl. Kyai Singkil No.7, Demak</li>
+                        <li><i class="fas fa-phone"></i> (0291) 685xxx</li>
+                        <li><i class="fas fa-envelope"></i> info@demakkab.go.id</li>
+                    </ul>
+                </div>
+                <!-- ... other columns same as index.html ... -->
+            </div>
+            <div class="copyright">
+                &copy; 2024 Dinas Pekerjaan Umum dan Penataan Ruang Kabupaten Demak. All Rights Reserved.
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase.js"></script>
+    <script>
+        let allReports = [];
+        let currentFilter = 'all';
+
+        function toggleMenu() {
+            const menu = document.getElementById('navMenu');
+            menu.classList.toggle('active');
+        }
+
+        async function fetchPublicReports() {
+            if (!window.sb) {
+                setTimeout(fetchPublicReports, 500);
+                return;
+            }
+
+            try {
+                // Determine initial filter from URL
+                const urlParams = new URLSearchParams(window.location.search);
+                currentFilter = urlParams.get('status') || 'all';
+                updateFilterUI(currentFilter);
+
+                const { data, error } = await sb
+                    .from('road_reports')
+                    .select('*')
+                    .is('deleted_at', null)
+                    .eq('report_source', 'public')
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+                allReports = data || [];
+                applyAndRender();
+            } catch (err) {
+                console.error("Error fetching reports:", err);
+                document.getElementById('reportsBody').innerHTML = `
+                    <tr>
+                        <td colspan="6" style="text-align: center; padding: 40px; color: #ef4444;">
+                            Gagal memuat data. Silakan coba lagi nanti.
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        function setFilter(status) {
+            currentFilter = status;
+
+            // Update URL without reloading
+            const url = new URL(window.location);
+            url.searchParams.set('status', status);
+            window.history.pushState({}, '', url);
+
+            updateFilterUI(status);
+            applyAndRender();
+        }
+
+        function updateFilterUI(status) {
+            document.querySelectorAll('.filter-tab').forEach(tab => {
+                if (tab.dataset.status === status) {
+                    tab.classList.add('active');
+                } else {
+                    tab.classList.remove('active');
+                }
+            });
+        }
+
+        function applyAndRender() {
+            let filtered = allReports;
+            if (currentFilter !== 'all') {
+                filtered = allReports.filter(r => r.status === currentFilter);
+            }
+            renderReports(filtered);
+        }
+
+        function renderReports(reports) {
+            const tbody = document.getElementById('reportsBody');
+            if (reports.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px;">Belum ada laporan warga.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = reports.map(report => {
+                const date = new Date(report.created_at).toLocaleDateString('id-ID', {
+                    day: 'numeric', month: 'short', year: 'numeric',
+                    hour: '2-digit', minute: '2-digit'
+                }).replace('.', ':');
+
+                let lampiranHtml = report.photo_url
+                    ? `<button class="btn-view" onclick="showPhoto('${report.photo_url}')"><i class="fas fa-image"></i> Foto</button>`
+                    : '<span style="color: #94a3b8; font-style: italic; font-size: 0.85rem;">Tanpa Foto</span>';
+
+                let mapHtml = (report.latitude && report.longitude)
+                    ? `<button class="btn-view btn-map" onclick="openMap(${report.latitude}, ${report.longitude})"><i class="fas fa-map-marker-alt"></i> Peta</button>`
+                    : '';
+
+                return `
+                    <tr>
+                        <td style="white-space: nowrap;">${date}</td>
+                        <td style="font-weight: 500;">${report.reporter_name || 'Anonim'}</td>
+                        <td>${report.district}</td>
+                        <td style="max-width: 300px;">${report.description || '-'}</td>
+                        <td><span class="status-badge status-${report.status || 'pending'}">${report.status || 'pending'}</span></td>
+                        <td>
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                ${lampiranHtml}
+                                ${mapHtml}
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function showPhoto(url) {
+            document.getElementById('modalImage').src = url;
+            document.getElementById('photoModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('photoModal').style.display = 'none';
+        }
+
+        function openMap(lat, lng) {
+            window.open(`https://www.google.com/maps?q=${lat},${lng}`, '_blank');
+        }
+
+        // Close modal on outside click
+        window.onclick = function (event) {
+            const modal = document.getElementById('photoModal');
+            if (event.target == modal) {
+                closeModal();
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', fetchPublicReports);
+    </script>
+</body>
+
+</html>
