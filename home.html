@@ -67,10 +67,13 @@
         </div>
 
         <div class="nav-menu" id="navMenu">
+<<<<<<< HEAD
             <a onclick="switchView('reports'); switchReportTab('public'); toggleMenu()" class="nav-item"
                 id="nav-public-reports">
                 <i class="fas fa-users"></i> Laporan Warga
             </a>
+=======
+>>>>>>> 356d8c2c9feb156d48787d2949de9f90ad9791a3
             <a onclick="switchView('dashboard'); toggleMenu()" class="nav-item active" id="nav-dashboard">
                 <i class="fas fa-home"></i> Dashboard
             </a>
@@ -482,11 +485,15 @@
         function switchView(viewName) {
             // Update Menu Active State
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+<<<<<<< HEAD
             if (viewName === 'reports' && currentTab === 'public') {
                 document.getElementById('nav-public-reports').classList.add('active');
             } else {
                 document.getElementById(`nav-${viewName}`).classList.add('active');
             }
+=======
+            document.getElementById(`nav-${viewName}`).classList.add('active');
+>>>>>>> 356d8c2c9feb156d48787d2949de9f90ad9791a3
 
             // Toggle Sections
             document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
@@ -505,6 +512,7 @@
             currentTab = type;
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             document.getElementById(`tab-${type}`).classList.add('active');
+<<<<<<< HEAD
 
             // Update Navbar Active State
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
@@ -514,6 +522,8 @@
                 document.getElementById('nav-reports').classList.add('active');
             }
 
+=======
+>>>>>>> 356d8c2c9feb156d48787d2949de9f90ad9791a3
             filterAndRender();
         }
 

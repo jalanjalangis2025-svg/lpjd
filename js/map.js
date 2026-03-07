@@ -17,6 +17,7 @@ const googleStreets = L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&
 
 // Storage
 let allReports = [];
+<<<<<<< HEAD
 let districtLayers = {}; // To store Polygon layers by name
 let roadLayers = []; // To store all road layers
 const layers = {
@@ -105,6 +106,37 @@ async function drawDemakBoundary() {
     } catch (err) {
         console.error("Error loading GeoJSON data:", err);
     }
+=======
+const layers = {
+    markers: L.layerGroup().addTo(map),
+    boundary: L.layerGroup().addTo(map)
+};
+
+// Demak Boundary (Simplified Polygon)
+// In a real app, this would be a detailed GeoJSON loaded from file.
+const demakBoundaryCoords = [
+    [-6.82, 110.45], [-6.80, 110.55], [-6.78, 110.65], [-6.80, 110.75],
+    [-6.85, 110.85], [-6.95, 110.82], [-7.05, 110.75], [-7.08, 110.60],
+    [-7.00, 110.50], [-6.95, 110.42], [-6.82, 110.45]
+];
+
+function drawDemakBoundary() {
+    const polygon = L.polygon(demakBoundaryCoords, {
+        color: '#0056b3',
+        weight: 3,
+        opacity: 0.6,
+        fillColor: '#0056b3',
+        fillOpacity: 0.05,
+        dashArray: '5, 10'
+    });
+    
+    // Add "Kabupaten Demak" label center
+    const center = polygon.getBounds().getCenter();
+    // Optional: Add a text label marker
+    
+    layers.boundary.clearLayers();
+    layers.boundary.addLayer(polygon);
+>>>>>>> 356d8c2c9feb156d48787d2949de9f90ad9791a3
 }
 
 // Color logic for Status
@@ -132,8 +164,13 @@ function createMarkerIcon(status) {
 
 function createPopup(report) {
     const statusLabel = report.status === 'verified' ? 'Terverifikasi' :
+<<<<<<< HEAD
         report.status === 'rejected' ? 'Ditolak' : 'Menunggu';
 
+=======
+                       report.status === 'rejected' ? 'Ditolak' : 'Menunggu';
+    
+>>>>>>> 356d8c2c9feb156d48787d2949de9f90ad9791a3
     const color = getStatusColor(report.status);
 
     return `
@@ -168,7 +205,11 @@ function createPopup(report) {
 async function loadMapData() {
     // Show rough boundary immediately
     drawDemakBoundary();
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 356d8c2c9feb156d48787d2949de9f90ad9791a3
     if (!window.sb) {
         setTimeout(loadMapData, 500);
         return;
@@ -186,17 +227,27 @@ async function loadMapData() {
     }
 
     allReports = data || [];
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 356d8c2c9feb156d48787d2949de9f90ad9791a3
     populateDistrictFilter();
     applyFilters();
 }
 
 function populateDistrictFilter() {
     const districtSelect = document.getElementById('districtFilter');
+<<<<<<< HEAD
     districtSelect.innerHTML = '<option value="">Semua Kecamatan</option>'; // Reset
 
     // Explicitly populate from the colorful known districts
     const districts = Object.keys(districtColors).filter(d => d !== 'Unknown').sort();
+=======
+    // Get unique districts
+    const districts = [...new Set(allReports.map(r => r.district).filter(Boolean))].sort();
+    
+>>>>>>> 356d8c2c9feb156d48787d2949de9f90ad9791a3
     districts.forEach(d => {
         const option = document.createElement('option');
         option.value = d;
@@ -208,9 +259,15 @@ function populateDistrictFilter() {
 function applyFilters() {
     const district = document.getElementById('districtFilter').value;
     const status = document.getElementById('statusFilter').value;
+<<<<<<< HEAD
 
     // 1. Process Pins (Markers)
     layers.markers.clearLayers();
+=======
+    
+    layers.markers.clearLayers();
+    
+>>>>>>> 356d8c2c9feb156d48787d2949de9f90ad9791a3
     const filtered = allReports.filter(r => {
         const matchDistrict = district ? r.district === district : true;
         const matchStatus = status === 'all' ? true : r.status === status;
@@ -225,6 +282,7 @@ function applyFilters() {
         layers.markers.addLayer(marker);
     });
 
+<<<<<<< HEAD
     // 2. Interactive Map Visuals (Polygons & Roads)
     layers.labels.clearLayers(); // Clear old labels
 
@@ -296,6 +354,15 @@ function applyFilters() {
                 weight: originalWeight
             });
         });
+=======
+    // If district selected, zoom to it
+    if (district && filtered.length > 0) {
+        const group = L.featureGroup(layers.markers.getLayers());
+        map.fitBounds(group.getBounds(), { padding: [50, 50] });
+    } else if (!district) {
+        // Reset view to Demak
+         map.setView([-6.8943, 110.6373], 11);
+>>>>>>> 356d8c2c9feb156d48787d2949de9f90ad9791a3
     }
 }
 
