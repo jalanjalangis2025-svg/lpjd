@@ -124,7 +124,7 @@ async function submitReport(e, source, id = null) {
         btn.innerText = "Mengkompresi foto...";
         
         try {
-            const compressedFile = await compressImage(file);
+            const compressedFile = await processImageWithWatermark(file);
             const fileName = `${Date.now()}_${file.name.replace(/\s/g, '_')}`;
             
             btn.innerText = "Mengupload foto...";
@@ -186,8 +186,8 @@ async function submitReport(e, source, id = null) {
     btn.innerText = "Kirim / Simpan";
 }
 
-// Utility: Image Compression (Force max 1MB)
-function compressImage(file) {
+// Utility: Image Processing with Watermark & Compression
+function processImageWithWatermark(file) {
     const MAX_SIZE_MB = 1;
     const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
 
@@ -202,9 +202,8 @@ function compressImage(file) {
                 let width = img.width;
                 let height = img.height;
                 
-                // Initial Resize if too huge (e.g. > 2000px) to save processing
-                // This is a "soft" first pass
-                const MAX_DIMENSION = 1920; 
+                // Max dimension to handle huge images
+                const MAX_DIMENSION = 1600; 
                 if (width > height) {
                     if (width > MAX_DIMENSION) {
                         height *= MAX_DIMENSION / width;
@@ -222,9 +221,39 @@ function compressImage(file) {
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, width, height);
 
-                // Iterative compression
-                let quality = 0.9;
+                // --- ADD WATERMARK ---
+                const padding = width * 0.02;
+                const fontSize = Math.max(width * 0.015, 12);
+                const barHeight = fontSize * 4;
+
+                // Semi-transparent background at bottom
+                ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
+                ctx.fillRect(0, height - barHeight, width, barHeight);
+
+                ctx.fillStyle = "white";
+                ctx.font = `${fontSize}px 'Plus Jakarta Sans', sans-serif`;
+                ctx.textBaseline = "middle";
+
+                // Metadata retrieval
+                const now = new Date();
+                const timestamp = now.toLocaleString('id-ID', { 
+                    day: '2-digit', month: 'long', year: 'numeric', 
+                    hour: '2-digit', minute: '2-digit', second: '2-digit' 
+                });
                 
+                const lat = document.getElementById('latitude')?.value || 'N/A';
+                const lng = document.getElementById('longitude')?.value || 'N/A';
+                
+                // Row 1: Timestamp & App (Left)
+                let textLeftTop = `${timestamp} | lpjd.vercel.app`;
+                ctx.fillText(textLeftTop, padding, height - (barHeight * 0.7));
+
+                // Row 2: Location (Left)
+                let textLeftBottom = `Lokasi: ${lat}, ${lng}`;
+                ctx.fillText(textLeftBottom, padding, height - (barHeight * 0.3));
+
+                // --- ITERATIVE COMPRESSION ---
+                let quality = 0.85;
                 const tryCompress = () => {
                     canvas.toBlob((blob) => {
                         if (!blob) {
@@ -233,24 +262,10 @@ function compressImage(file) {
                         }
 
                         if (blob.size <= MAX_SIZE_BYTES || quality <= 0.1) {
-                            // Done or reached min quality
-                            console.log(`Compressed to: ${(blob.size / 1024 / 1024).toFixed(2)} MB, Quality: ${quality.toFixed(2)}`);
+                            console.log(`Processed: ${(blob.size / 1024 / 1024).toFixed(2)} MB, Quality: ${quality.toFixed(2)}`);
                             resolve(blob);
                         } else {
-                            // Too big, reduce quality
-                            console.log(`Still too big: ${(blob.size / 1024 / 1024).toFixed(2)} MB, reducing quality...`);
                             quality -= 0.1;
-                            
-                            // If quality drops too low, resize again
-                            if (quality < 0.5) {
-                                width *= 0.8;
-                                height *= 0.8;
-                                canvas.width = width;
-                                canvas.height = height;
-                                ctx.drawImage(img, 0, 0, width, height);
-                                quality = 0.8; // Reset quality for new size
-                            }
-                            
                             tryCompress();
                         }
                     }, 'image/jpeg', quality);
