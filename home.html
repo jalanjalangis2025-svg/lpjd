@@ -207,13 +207,24 @@
                 </div>
             </div>
 
-            <div class="tabs">
-                <button class="tab-btn active" id="tab-public" onclick="switchReportTab('public')">
-                    <i class="fas fa-users"></i> Laporan Warga
-                </button>
-                <button class="tab-btn" id="tab-admin" onclick="switchReportTab('admin')">
-                    <i class="fas fa-hard-hat"></i> Data Teknis Dinas
-                </button>
+            <div class="tabs"
+                style="display: flex; justify-content: space-between; align-items: center; width: 100%; flex-wrap: wrap; gap: 15px;">
+                <div style="display: flex; gap: 10px;">
+                    <button class="tab-btn active" id="tab-public" onclick="switchReportTab('public')">
+                        <i class="fas fa-users"></i> Laporan Warga
+                    </button>
+                    <button class="tab-btn" id="tab-admin" onclick="switchReportTab('admin')">
+                        <i class="fas fa-hard-hat"></i> Data Teknis Dinas
+                    </button>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <label style="font-size: 0.9rem; color: #64748b; font-weight: 600;">Filter Kecamatan:</label>
+                    <select id="adminDistrictFilter" onchange="setAdminDistrictFilter(this.value)"
+                        style="padding: 8px 12px; border-radius: 8px; border: 1px solid #e2e8f0; font-family: inherit; font-size: 0.9rem; color: #1e293b; outline: none; cursor: pointer;">
+                        <option value="all">Semua Kecamatan</option>
+                    </select>
+                </div>
             </div>
 
             <div class="table-container">
@@ -229,6 +240,9 @@
                         </tr>
                     </tbody>
                 </table>
+            </div>
+            <div id="reportsPagination" class="pagination">
+                <!-- Pagination Rendered by JS -->
             </div>
         </div>
 
@@ -335,6 +349,45 @@
             background: #f0fdf4;
             color: #16a34a;
         }
+
+        /* Pagination Styles */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-top: 20px;
+            padding: 10px;
+        }
+
+        .btn-page {
+            padding: 6px 12px;
+            border: 1px solid #cbd5e1;
+            background: white;
+            color: #475569;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+        }
+
+        .btn-page:hover:not(:disabled) {
+            border-color: #3b82f6;
+            color: #3b82f6;
+            background: #f8fafc;
+        }
+
+        .btn-page:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .page-info {
+            color: #64748b;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
     </style>
     <div class="modal-overlay" id="actionModal">
         <div class="modal-content">
@@ -399,18 +452,25 @@
         let allReports = [];
         let selectedReportId = null;
         let currentTab = 'public'; // 'public' or 'admin'
+        let currentAdminDistrict = 'all';
+        let currentAdminPage = 1;
+        const adminItemsPerPage = 10;
+
+        const districts = [
+            "Mranggen", "Karangawen", "Guntur", "Sayung", "Karangtengah",
+            "Bonang", "Demak", "Wonosalam", "Dempet", "Kebonagung",
+            "Gajah", "Karanganyar", "Mijen", "Wedung"
+        ];
 
         // Dashboard Entry Logic
         document.addEventListener('DOMContentLoaded', () => {
             // Init: Fade in body
             document.body.style.opacity = '1';
 
+            // Populate Filters
+            populateAdminFilters();
+
             // Populate Export Districts
-            const districts = [
-                "Mranggen", "Karangawen", "Guntur", "Sayung", "Karangtengah",
-                "Bonang", "Demak", "Wonosalam", "Dempet", "Kebonagung",
-                "Gajah", "Karanganyar", "Mijen", "Wedung"
-            ];
             const exportSelect = document.getElementById('exportDistrict');
             if (exportSelect) {
                 districts.sort().forEach(d => {
@@ -526,6 +586,7 @@
 
         function switchReportTab(type) {
             currentTab = type;
+            currentAdminPage = 1; // Reset page
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             document.getElementById(`tab-${type}`).classList.add('active');
             // Update Navbar Active State
@@ -535,6 +596,22 @@
             } else {
                 document.getElementById('nav-reports').classList.add('active');
             }
+            filterAndRender();
+        }
+
+        function populateAdminFilters() {
+            const select = document.getElementById('adminDistrictFilter');
+            districts.sort().forEach(d => {
+                const opt = document.createElement('option');
+                opt.value = d;
+                opt.textContent = d;
+                select.appendChild(opt);
+            });
+        }
+
+        function setAdminDistrictFilter(val) {
+            currentAdminDistrict = val;
+            currentAdminPage = 1; // Reset page
             filterAndRender();
         }
 
@@ -571,8 +648,56 @@
         }
 
         function filterAndRender() {
-            const filteredData = allReports.filter(item => item.report_source === currentTab);
-            renderTable(filteredData, currentTab);
+            let filteredData = allReports.filter(item => item.report_source === currentTab);
+
+            // District filter
+            if (currentAdminDistrict !== 'all') {
+                filteredData = filteredData.filter(item => item.district === currentAdminDistrict);
+            }
+
+            // Pagination logic
+            const totalItems = filteredData.length;
+            const totalPages = Math.ceil(totalItems / adminItemsPerPage);
+
+            if (currentAdminPage > totalPages && totalPages > 0) {
+                currentAdminPage = totalPages;
+            }
+
+            const startIndex = (currentAdminPage - 1) * adminItemsPerPage;
+            const endIndex = startIndex + adminItemsPerPage;
+            const paginatedData = filteredData.slice(startIndex, endIndex);
+
+            renderTable(paginatedData, currentTab);
+            renderAdminPagination(totalPages, totalItems);
+        }
+
+        function renderAdminPagination(totalPages, totalItems) {
+            const paginationEl = document.getElementById('reportsPagination');
+            if (totalItems <= adminItemsPerPage) {
+                paginationEl.innerHTML = totalItems > 0 ? `<div class="page-info">Total ${totalItems} data</div>` : '';
+                return;
+            }
+
+            paginationEl.innerHTML = `
+                <button class="btn-page" onclick="changeAdminPage(1)" ${currentAdminPage === 1 ? 'disabled' : ''}>
+                    <i class="fas fa-angle-double-left"></i>
+                </button>
+                <button class="btn-page" onclick="changeAdminPage(${currentAdminPage - 1})" ${currentAdminPage === 1 ? 'disabled' : ''}>
+                    <i class="fas fa-angle-left"></i>
+                </button>
+                <div class="page-info">Halaman ${currentAdminPage} dari ${totalPages} (${totalItems} data)</div>
+                <button class="btn-page" onclick="changeAdminPage(${currentAdminPage + 1})" ${currentAdminPage === totalPages ? 'disabled' : ''}>
+                    <i class="fas fa-angle-right"></i>
+                </button>
+                <button class="btn-page" onclick="changeAdminPage(${totalPages})" ${currentAdminPage === totalPages ? 'disabled' : ''}>
+                    <i class="fas fa-angle-double-right"></i>
+                </button>
+            `;
+        }
+
+        function changeAdminPage(page) {
+            currentAdminPage = page;
+            filterAndRender();
         }
 
         function renderTable(data, type) {
