@@ -178,6 +178,7 @@ async function loadMapData() {
         .from('road_reports')
         .select('*')
         .is('deleted_at', null)
+        .eq('report_source', 'public')
         .order('created_at', { ascending: false });
 
     if (error) {

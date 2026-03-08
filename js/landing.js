@@ -10,7 +10,8 @@ async function fetchStats() {
         const { data, error } = await sb
             .from('road_reports')
             .select('status')
-            .is('deleted_at', null);
+            .is('deleted_at', null)
+            .eq('report_source', 'public');
 
         if (error) throw error;
 
@@ -30,15 +31,15 @@ async function fetchStats() {
 // Simple counter animation
 function animateValue(id, start, end, duration) {
     if (start === end) {
-         document.getElementById(id).textContent = end;
-         return;
+        document.getElementById(id).textContent = end;
+        return;
     }
     const range = end - start;
     let current = start;
     const increment = end > start ? 1 : -1;
     const stepTime = Math.abs(Math.floor(duration / range));
     const obj = document.getElementById(id);
-    const timer = setInterval(function() {
+    const timer = setInterval(function () {
         current += increment;
         obj.textContent = current;
         if (current == end) {
