@@ -1,16 +1,20 @@
 /* Standard Government Form Style */
 /* Variables consistent with common.css */
 :root {
-    --primary-blue: #0056b3;
-    --secondary-blue: #0ea5e9;
-    --dark-blue: #0f172a;
-    --light-bg: #f8f9fa;
+    --primary-blue: #2563eb;
+    --secondary-blue: #3b82f6;
+    --dark-blue: #1e293b;
+    --light-bg: #f8fafc;
     --border-color: #e2e8f0;
-    --text-primary: #1e293b;
+    --text-primary: #0f172a;
     --text-secondary: #64748b;
     --success: #10b981;
-    --warning: #facc15;
+    --warning: #f59e0b;
     --danger: #ef4444;
+    --white: #ffffff;
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -1px rgb(0 0 0 / 0.06);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
 }
 
 body {
@@ -28,11 +32,12 @@ body {
 
 /* Card Style */
 .form-card {
-    background: white;
-    border-radius: 16px;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    padding: 40px;
-    margin-bottom: 30px;
+    background: var(--white);
+    border-radius: 20px;
+    box-shadow: var(--shadow-lg);
+    padding: 48px;
+    margin-bottom: 40px;
+    border: 1px solid var(--border-color);
 }
 
 /* Header */
@@ -42,15 +47,18 @@ body {
 }
 
 .form-header h1 {
-    font-size: 1.8rem;
+    font-size: 2.25rem;
     color: var(--dark-blue);
-    margin-bottom: 10px;
-    font-weight: 700;
+    margin-bottom: 12px;
+    font-weight: 800;
+    letter-spacing: -0.025em;
 }
 
 .form-header p {
     color: var(--text-secondary);
-    font-size: 1rem;
+    font-size: 1.125rem;
+    max-width: 600px;
+    margin: 0 auto;
 }
 
 .back-link {
@@ -59,13 +67,17 @@ body {
     gap: 8px;
     color: var(--text-secondary);
     text-decoration: none;
-    font-weight: 500;
-    margin-bottom: 20px;
-    transition: color 0.2s;
+    font-weight: 600;
+    margin-bottom: 24px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .back-link:hover {
     color: var(--primary-blue);
+    background: rgba(37, 99, 235, 0.05);
+    transform: translateX(-4px);
 }
 
 /* Sections */
@@ -81,13 +93,13 @@ body {
 }
 
 .section-title {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--primary-blue);
-    margin-bottom: 20px;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--dark-blue);
+    margin-bottom: 24px;
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
 }
 
 .section-title i {
@@ -154,15 +166,16 @@ body {
 .form-group select,
 .form-group textarea {
     width: 100%;
-    padding: 12px 16px;
+    padding: 14px 18px;
     border: 1px solid var(--border-color);
-    border-radius: 8px;
+    border-radius: 12px;
     font-size: 1rem;
     outline: none;
     transition: all 0.2s;
     background: #fff;
     font-family: inherit;
     color: var(--text-primary);
+    box-shadow: var(--shadow-sm);
 }
 
 .form-input:focus,
@@ -186,8 +199,19 @@ body {
     color: var(--text-secondary);
 }
 
-.input-with-icon input {
+.input-with-icon input,
+.input-with-icon select {
     padding-left: 45px;
+}
+
+/* Custom Select Arrow */
+.input-with-icon select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 16px center;
+    background-size: 16px;
+    padding-right: 45px;
 }
 
 /* Buttons */
@@ -195,17 +219,24 @@ body {
     width: 100%;
     background: linear-gradient(135deg, var(--primary-blue), var(--secondary-blue));
     color: white;
-    padding: 14px;
+    padding: 16px;
     border: none;
-    border-radius: 10px;
-    font-size: 1.1rem;
-    font-weight: 600;
+    border-radius: 12px;
+    font-size: 1.125rem;
+    font-weight: 700;
     cursor: pointer;
-    transition: transform 0.2s, box-shadow 0.2s;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     display: inline-flex;
     justify-content: center;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4);
+    filter: brightness(1.05);
 }
 
 .btn-primary:active {

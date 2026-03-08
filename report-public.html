@@ -8,13 +8,13 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="css/common.css"> <!-- Kept for basic resets if needed -->
+    <link rel="stylesheet" href="css/common.css">
+    <link rel="stylesheet" href="css/navbar.css">
     <link rel="stylesheet" href="css/form.css">
 </head>
 
-<body>
+<body style="opacity: 0; transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1);">
 
-<<<<<<< HEAD
     <nav class="navbar">
         <div class="container">
             <a href="index.html" class="brand">
@@ -45,33 +45,9 @@
         </div>
     </nav>
 
-    <div class="form-header">
-        <h1>Lapor Jalan Rusak</h1>
-        <p>Partisipasi anda mewujudkan infrastruktur Kabupaten Demak yang lebih baik.</p>
-    </div>
-
-    <div class="form-card">
-        <form id="reportForm">
-
-            <!-- Section 1: Pelapor -->
-            <div class="form-section">
-                <h3 class="section-title"><i class="fas fa-user"></i> Informasi Pelapor</h3>
-
-                <div class="form-group">
-                    <label>Nama Lengkap</label>
-                    <div class="input-with-icon">
-                        <i class="fas fa-user-circle"></i>
-                        <input type="text" id="reporter_name" placeholder="Contoh: Budi Santoso" required>
-                    </div>
-                </div>
-
-                <div class="input-with-icon">
-                    <i class="fas fa-phone"></i>
-                    <input type="tel" id="reporter_contact" placeholder="08xxxxxxxxxx" required>
-=======
-    <div class="form-container">
-        <a href="/map" class="back-link">
-            <i class="fas fa-arrow-left"></i> Kembali ke Peta
+    <div class="form-container" style="margin-top: calc(var(--nav-height) + 40px);">
+        <a href="index.html" class="back-link">
+            <i class="fas fa-arrow-left"></i> Kembali ke Beranda
         </a>
 
         <div class="form-header">
@@ -94,188 +70,115 @@
                         </div>
                     </div>
 
-                    <div class="input-with-icon">
-                        <i class="fas fa-phone"></i>
-                        <input type="tel" id="reporter_contact" placeholder="08xxxxxxxxxx" required>
+                    <div class="form-group">
+                        <label>Kontak (WhatsApp/Telp)</label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-phone"></i>
+                            <input type="tel" id="reporter_contact" placeholder="08xxxxxxxxxx" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Tanggal Laporan</label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-calendar-alt"></i>
+                            <input type="text" id="report_date_display" readonly
+                                style="background-color: #f1f5f9; cursor: not-allowed;">
+                        </div>
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label>Tanggal Laporan</label>
-                    <div class="input-with-icon">
-                        <i class="fas fa-calendar-alt"></i>
-                        <input type="text" id="report_date_display" readonly
-                            style="background-color: #f1f5f9; cursor: not-allowed;">
+                <!-- Section 2: Lokasi & Detail -->
+                <div class="form-section">
+                    <h3 class="section-title"><i class="fas fa-map-marked-alt"></i> Detail Lokasi</h3>
+
+                    <div class="form-group">
+                        <label>Kecamatan</label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-city"></i>
+                            <select id="district" required>
+                                <option value="">Pilih Kecamatan...</option>
+                                <option value="Bonang">Bonang</option>
+                                <option value="Demak">Demak</option>
+                                <option value="Dempet">Dempet</option>
+                                <option value="Gajah">Gajah</option>
+                                <option value="Guntur">Guntur</option>
+                                <option value="Karanganyar">Karanganyar</option>
+                                <option value="Karangawen">Karangawen</option>
+                                <option value="Karangtengah">Karangtengah</option>
+                                <option value="Kebonagung">Kebonagung</option>
+                                <option value="Mijen">Mijen</option>
+                                <option value="Mranggen">Mranggen</option>
+                                <option value="Sayung">Sayung</option>
+                                <option value="Wedung">Wedung</option>
+                                <option value="Wonosalam">Wonosalam</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Titik Koordinat</label>
+                        <button type="button" onclick="getLocation()" class="btn-primary"
+                            style="margin-bottom: 10px; font-size: 1rem;">
+                            <i class="fas fa-location-crosshairs"></i> Ambil Lokasi Saya
+                        </button>
+                        <span id="location-status"></span>
+
+                        <div class="details-grid" style="margin-top: 15px; grid-template-columns: 1fr 1fr; gap: 12px;">
+                            <div class="input-with-icon">
+                                <i class="fas fa-map-pin" style="color: var(--danger);"></i>
+                                <input type="number" id="latitude" placeholder="Latitude" step="any" readonly required>
+                            </div>
+                            <div class="input-with-icon">
+                                <i class="fas fa-map-pin" style="color: var(--danger);"></i>
+                                <input type="number" id="longitude" placeholder="Longitude" step="any" readonly
+                                    required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Deskripsi Kerusakan</label>
+                        <textarea id="description" rows="4"
+                            placeholder="Jelaskan kondisi jalan secara singkat. Contoh: Berlubang dalam di tengah jalan..."
+                            required></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Foto Bukti</label>
+                        <div class="file-upload-box">
+                            <input type="file" id="photo" accept="image/*" capture="environment"
+                                onchange="previewImage(this)">
+                            <div class="upload-placeholder">
+                                <i class="fas fa-camera"></i>
+                                <span>Klik untuk ambil foto atau pilih dari galeri</span>
+                            </div>
+                        </div>
+                        <img id="imagePreview" class="preview-image">
                     </div>
                 </div>
-        </div>
 
-        <!-- Section 2: Lokasi & Detail -->
-        <div class="form-section">
-            <h3 class="section-title"><i class="fas fa-map-marked-alt"></i> Detail Lokasi</h3>
-
-            <div class="form-group">
-                <label>Kecamatan</label>
-                <div class="input-with-icon">
-                    <i class="fas fa-city"></i>
-                    <select id="district" required>
-                        <option value="">Pilih Kecamatan...</option>
-                        <option value="Bonang">Bonang</option>
-                        <option value="Demak">Demak</option>
-                        <option value="Dempet">Dempet</option>
-                        <option value="Gajah">Gajah</option>
-                        <option value="Guntur">Guntur</option>
-                        <option value="Karanganyar">Karanganyar</option>
-                        <option value="Karangawen">Karangawen</option>
-                        <option value="Karangtengah">Karangtengah</option>
-                        <option value="Kebonagung">Kebonagung</option>
-                        <option value="Mijen">Mijen</option>
-                        <option value="Mranggen">Mranggen</option>
-                        <option value="Sayung">Sayung</option>
-                        <option value="Wedung">Wedung</option>
-                        <option value="Wonosalam">Wonosalam</option>
-                    </select>
->>>>>>> 356d8c2c9feb156d48787d2949de9f90ad9791a3
-                </div>
-            </div>
-
-            <div class="form-group">
-<<<<<<< HEAD
-                <label>Tanggal Laporan</label>
-                <div class="input-with-icon">
-                    <i class="fas fa-calendar-alt"></i>
-                    <input type="text" id="report_date_display" readonly
-                        style="background-color: #f1f5f9; cursor: not-allowed;">
-                </div>
-            </div>
-    </div>
-
-    <!-- Section 2: Lokasi & Detail -->
-    <div class="form-section">
-        <h3 class="section-title"><i class="fas fa-map-marked-alt"></i> Detail Lokasi</h3>
-
-        <div class="form-group">
-            <label>Kecamatan</label>
-            <div class="input-with-icon">
-                <i class="fas fa-city"></i>
-                <select id="district" required>
-                    <option value="">Pilih Kecamatan...</option>
-                    <option value="Bonang">Bonang</option>
-                    <option value="Demak">Demak</option>
-                    <option value="Dempet">Dempet</option>
-                    <option value="Gajah">Gajah</option>
-                    <option value="Guntur">Guntur</option>
-                    <option value="Karanganyar">Karanganyar</option>
-                    <option value="Karangawen">Karangawen</option>
-                    <option value="Karangtengah">Karangtengah</option>
-                    <option value="Kebonagung">Kebonagung</option>
-                    <option value="Mijen">Mijen</option>
-                    <option value="Mranggen">Mranggen</option>
-                    <option value="Sayung">Sayung</option>
-                    <option value="Wedung">Wedung</option>
-                    <option value="Wonosalam">Wonosalam</option>
-                </select>
-            </div>
-        </div>
-
-        <div class="form-group">
-            <label>Titik Koordinat</label>
-            <button type="button" onclick="getLocation()" class="btn-primary"
-                style="margin-bottom: 10px; font-size: 1rem;">
-                <i class="fas fa-location-crosshairs"></i> Ambil Lokasi Saya
-            </button>
-            <span id="location-status"></span>
-
-            <div class="details-grid" style="margin-top: 10px;">
-                <div class="input-with-icon">
-                    <i class="fas fa-map-pin"></i>
-                    <input type="number" id="latitude" placeholder="Latitude" step="any" readonly required>
-                </div>
-                <div class="input-with-icon">
-                    <i class="fas fa-map-pin"></i>
-                    <input type="number" id="longitude" placeholder="Longitude" step="any" readonly required>
-                </div>
-            </div>
-        </div>
-
-        <div class="form-group">
-            <label>Deskripsi Kerusakan</label>
-            <textarea id="description" rows="4"
-                placeholder="Jelaskan kondisi jalan secara singkat. Contoh: Berlubang dalam di tengah jalan..."
-                required></textarea>
-        </div>
-
-        <div class="form-group">
-            <label>Foto Bukti</label>
-            <div class="file-upload-box">
-                <input type="file" id="photo" accept="image/*" capture="environment" onchange="previewImage(this)">
-                <div class="upload-placeholder">
-                    <i class="fas fa-camera"></i>
-                    <span>Klik untuk ambil foto atau pilih dari galeri</span>
-                </div>
-            </div>
-            <img id="imagePreview" class="preview-image">
-        </div>
-    </div>
-
-    <button type="submit" id="submitBtn" class="btn-primary">
-        <i class="fas fa-paper-plane"></i> Kirim Laporan
-    </button>
-
-    </form>
-=======
-                <label>Titik Koordinat</label>
-                <button type="button" onclick="getLocation()" class="btn-primary"
-                    style="margin-bottom: 10px; font-size: 1rem;">
-                    <i class="fas fa-location-crosshairs"></i> Ambil Lokasi Saya
+                <button type="submit" id="submitBtn" class="btn-primary">
+                    <i class="fas fa-paper-plane"></i> Kirim Laporan
                 </button>
-                <span id="location-status"></span>
 
-                <div class="details-grid" style="margin-top: 10px;">
-                    <div class="input-with-icon">
-                        <i class="fas fa-map-pin"></i>
-                        <input type="number" id="latitude" placeholder="Latitude" step="any" readonly required>
-                    </div>
-                    <div class="input-with-icon">
-                        <i class="fas fa-map-pin"></i>
-                        <input type="number" id="longitude" placeholder="Longitude" step="any" readonly required>
-                    </div>
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label>Deskripsi Kerusakan</label>
-                <textarea id="description" rows="4"
-                    placeholder="Jelaskan kondisi jalan secara singkat. Contoh: Berlubang dalam di tengah jalan..."
-                    required></textarea>
-            </div>
-
-            <div class="form-group">
-                <label>Foto Bukti</label>
-                <div class="file-upload-box">
-                    <input type="file" id="photo" accept="image/*" capture="environment" onchange="previewImage(this)">
-                    <div class="upload-placeholder">
-                        <i class="fas fa-camera"></i>
-                        <span>Klik untuk ambil foto atau pilih dari galeri</span>
-                    </div>
-                </div>
-                <img id="imagePreview" class="preview-image">
-            </div>
+            </form>
         </div>
-
-        <button type="submit" id="submitBtn" class="btn-primary">
-            <i class="fas fa-paper-plane"></i> Kirim Laporan
-        </button>
-
-        </form>
->>>>>>> 356d8c2c9feb156d48787d2949de9f90ad9791a3
-    </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabase.js"></script>
     <script src="js/report.js"></script>
     <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            document.body.style.opacity = '1';
+        });
+
+        function toggleMenu() {
+            const menu = document.getElementById('navMenu');
+            menu.classList.toggle('active');
+        }
+
         function previewImage(input) {
             if (input.files && input.files[0]) {
                 var reader = new FileReader();
@@ -283,6 +186,7 @@
                     var preview = document.getElementById('imagePreview');
                     preview.src = e.target.result;
                     preview.style.display = 'block';
+                    preview.classList.add('fade-in');
                 }
                 reader.readAsDataURL(input.files[0]);
             }
