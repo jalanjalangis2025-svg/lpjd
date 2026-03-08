@@ -202,7 +202,7 @@ function processImageWithWatermark(file) {
                 let width = img.width;
                 let height = img.height;
                 
-                // Max dimension to handle huge images
+                // Max dimension for efficiency
                 const MAX_DIMENSION = 1600; 
                 if (width > height) {
                     if (width > MAX_DIMENSION) {
@@ -221,36 +221,60 @@ function processImageWithWatermark(file) {
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, width, height);
 
-                // --- ADD WATERMARK ---
-                const padding = width * 0.02;
-                const fontSize = Math.max(width * 0.015, 12);
-                const barHeight = fontSize * 4;
+                // --- DESIGN PREMIUM WATERMARK (Box Style) ---
+                const scale = width / 1000; // base scale
+                const boxW = width * 0.8;
+                const boxH = 120 * scale;
+                const boxX = (width - boxW) / 2;
+                const boxY = height - boxH - (20 * scale);
+                const radius = 15 * scale;
 
-                // Semi-transparent background at bottom
-                ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
-                ctx.fillRect(0, height - barHeight, width, barHeight);
+                // Rounded semi-transparent background
+                ctx.beginPath();
+                ctx.moveTo(boxX + radius, boxY);
+                ctx.lineTo(boxX + boxW - radius, boxY);
+                ctx.quadraticCurveTo(boxX + boxW, boxY, boxX + boxW, boxY + radius);
+                ctx.lineTo(boxX + boxW, boxY + boxH - radius);
+                ctx.quadraticCurveTo(boxX + boxW, boxY + boxH, boxX + boxW - radius, boxY + boxH);
+                ctx.lineTo(boxX + radius, boxY + boxH);
+                ctx.quadraticCurveTo(boxX, boxY + boxH, boxX, boxY + boxH - radius);
+                ctx.lineTo(boxX, boxY + radius);
+                ctx.quadraticCurveTo(boxX, boxY, boxX + radius, boxY);
+                ctx.closePath();
+                ctx.fillStyle = "rgba(0, 0, 0, 0.65)";
+                ctx.fill();
 
+                // Typography setup
                 ctx.fillStyle = "white";
-                ctx.font = `${fontSize}px 'Plus Jakarta Sans', sans-serif`;
-                ctx.textBaseline = "middle";
-
-                // Metadata retrieval
-                const now = new Date();
-                const timestamp = now.toLocaleString('id-ID', { 
-                    day: '2-digit', month: 'long', year: 'numeric', 
-                    hour: '2-digit', minute: '2-digit', second: '2-digit' 
-                });
+                ctx.font = `bold ${24 * scale}px 'Plus Jakarta Sans', sans-serif`;
                 
+                // Content
+                const now = new Date();
+                const dateStr = now.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+                const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
                 const lat = document.getElementById('latitude')?.value || 'N/A';
                 const lng = document.getElementById('longitude')?.value || 'N/A';
-                
-                // Row 1: Timestamp & App (Left)
-                let textLeftTop = `${timestamp} | lpjd.vercel.app`;
-                ctx.fillText(textLeftTop, padding, height - (barHeight * 0.7));
+                const district = document.getElementById('district')?.value || 'Kabupaten Demak';
 
-                // Row 2: Location (Left)
-                let textLeftBottom = `Lokasi: ${lat}, ${lng}`;
-                ctx.fillText(textLeftBottom, padding, height - (barHeight * 0.3));
+                // Drawing text
+                ctx.textAlign = "left";
+                
+                // Row 1: District / Brand
+                ctx.font = `bold ${22 * scale}px 'Plus Jakarta Sans', sans-serif`;
+                ctx.fillText(district, boxX + (20 * scale), boxY + (35 * scale));
+                
+                // Row 2: URL
+                ctx.font = `${16 * scale}px 'Plus Jakarta Sans', sans-serif`;
+                ctx.fillText("lpjd.vercel.app", boxX + (20 * scale), boxY + (60 * scale));
+
+                // Row 3: Coordinates (Large)
+                ctx.font = `bold ${26 * scale}px 'Plus Jakarta Sans', sans-serif`;
+                ctx.fillText(`${lat}°N  ${lng}°E`, boxX + (20 * scale), boxY + (95 * scale));
+
+                // Row 4: Date & Time (Right side)
+                ctx.font = `${18 * scale}px 'Plus Jakarta Sans', sans-serif`;
+                ctx.textAlign = "right";
+                ctx.fillText(`${dateStr}, ${timeStr}`, boxX + boxW - (20 * scale), boxY + (95 * scale));
 
                 // --- ITERATIVE COMPRESSION ---
                 let quality = 0.85;
@@ -262,7 +286,6 @@ function processImageWithWatermark(file) {
                         }
 
                         if (blob.size <= MAX_SIZE_BYTES || quality <= 0.1) {
-                            console.log(`Processed: ${(blob.size / 1024 / 1024).toFixed(2)} MB, Quality: ${quality.toFixed(2)}`);
                             resolve(blob);
                         } else {
                             quality -= 0.1;

@@ -185,16 +185,36 @@
             menu.classList.toggle('active');
         }
 
-        function previewImage(input) {
+        async function previewImage(input) {
             if (input.files && input.files[0]) {
-                var reader = new FileReader();
-                reader.onload = function (e) {
-                    var preview = document.getElementById('imagePreview');
-                    preview.src = e.target.result;
+                const preview = document.getElementById('imagePreview');
+                const file = input.files[0];
+                
+                // Show temporary loading or status
+                const status = document.getElementById('location-status');
+                const originalStatus = status ? status.innerText : "";
+                if (status) status.innerText = "Memproses watermark...";
+
+                try {
+                    const watermarkedBlob = await processImageWithWatermark(file);
+                    const objectUrl = URL.createObjectURL(watermarkedBlob);
+                    
+                    preview.src = objectUrl;
                     preview.style.display = 'block';
                     preview.classList.add('fade-in');
+                    
+                    if (status) status.innerText = originalStatus || "Foto siap!";
+                } catch (err) {
+                    console.error("Preview processing failed:", err);
+                    // Fallback to original
+                    var reader = new FileReader();
+                    reader.onload = function (e) {
+                        preview.src = e.target.result;
+                        preview.style.display = 'block';
+                    }
+                    reader.readAsDataURL(file);
+                    if (status) status.innerText = "Gagal watermark, menampilkan foto asli.";
                 }
-                reader.readAsDataURL(input.files[0]);
             }
         }
     </script>
