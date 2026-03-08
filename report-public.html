@@ -186,6 +186,15 @@
         }
 
         async function previewImage(input) {
+            const lat = document.getElementById('latitude').value;
+            const lng = document.getElementById('longitude').value;
+
+            if (!lat || !lng) {
+                alert("Silakan klik 'Ambil Lokasi Saya' terlebih dahulu sebelum mengambil foto agar data koordinat tersimpan.");
+                input.value = ""; // Clear the file input
+                return;
+            }
+
             if (input.files && input.files[0]) {
                 const preview = document.getElementById('imagePreview');
                 const file = input.files[0];
