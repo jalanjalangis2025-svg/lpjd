@@ -5,6 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lapor Jalan Rusak (Warga)</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="images/lambang_kabupaten_demak.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
@@ -17,8 +19,8 @@
 
     <nav class="navbar">
         <div class="container">
-            <a href="index.html" class="brand">
-                <i class="fas fa-road"></i>
+            <a href="index.html" class="brand" style="display: flex; align-items: center; gap: 8px;">
+                <img src="images/lambang_kabupaten_demak.png" alt="Logo Demak" style="height: 32px; width: auto;">
                 <span>LaporJalan <span style="font-weight: 400; font-size: 0.9em; opacity: 0.8;">| Kab.
                         Demak</span></span>
             </a>
@@ -35,12 +37,12 @@
                 <a href="report-public.html" class="nav-link active">Lapor Sekarang</a>
 
                 <div class="mobile-user-actions">
-                    <a href="home.html" class="btn-login"><i class="fas fa-lock"></i> Masuk Admin</a>
+                    <a href="home.html" class="btn-login" id="auth-btn-mobile"><i class="fas fa-lock"></i> Masuk Admin</a>
                 </div>
             </div>
 
             <div class="user-actions">
-                <a href="home.html" class="btn-login"><i class="fas fa-lock"></i> Masuk Admin</a>
+                <a href="home.html" class="btn-login" id="auth-btn-desktop"><i class="fas fa-lock"></i> Masuk Admin</a>
             </div>
         </div>
     </nav>
@@ -177,8 +179,20 @@
     <script src="js/supabase.js"></script>
     <script src="js/report.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             document.body.style.opacity = '1';
+            
+            // Check auth status
+            if (window.sb) {
+                const { data: { session } } = await sb.auth.getSession();
+                if (session) {
+                    const mobileBtn = document.getElementById('auth-btn-mobile');
+                    const desktopBtn = document.getElementById('auth-btn-desktop');
+                    
+                    if (mobileBtn) mobileBtn.innerHTML = '<i class="fas fa-chart-pie"></i> Dashboard';
+                    if (desktopBtn) desktopBtn.innerHTML = '<i class="fas fa-chart-pie"></i> Dashboard';
+                }
+            }
         });
 
         function toggleMenu() {

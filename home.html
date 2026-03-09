@@ -5,6 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="images/lambang_kabupaten_demak.png">
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -58,8 +60,8 @@
     <!-- Navbar -->
     <nav class="navbar">
         <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
-            <div class="brand">
-                <i class="fas fa-chart-pie"></i> Admin Panel
+            <div class="brand" style="display: flex; align-items: center; gap: 8px;">
+                <img src="images/lambang_kabupaten_demak.png" alt="Logo Demak" style="height: 32px; width: auto;"> Admin Panel
             </div>
             <button class="menu-toggle" onclick="toggleMenu()">
                 <i class="fas fa-bars"></i>
@@ -189,6 +191,9 @@
                         </tr>
                     </tbody>
                 </table>
+            </div>
+            <div id="mapReportsPagination" class="pagination">
+                <!-- Pagination Rendered by JS -->
             </div>
         </div>
 
@@ -455,6 +460,8 @@
         let currentAdminDistrict = 'all';
         let currentAdminPage = 1;
         const adminItemsPerPage = 10;
+        let currentMapPage = 1;
+        const mapItemsPerPage = 10;
 
         const districts = [
             "Mranggen", "Karangawen", "Guntur", "Sayung", "Karangtengah",
@@ -635,6 +642,7 @@
             allReports = data || [];
             updateStats();
             filterAndRender();
+            renderMapTable(allReports);
 
             if (window.renderAdminMap) {
                 renderAdminMap(allReports);
@@ -645,6 +653,99 @@
             document.getElementById('statTotal').innerText = allReports.length;
             document.getElementById('statPending').innerText = allReports.filter(r => r.status === 'pending').length;
             document.getElementById('statVerified').innerText = allReports.filter(r => r.status === 'verified').length;
+        }
+
+        function renderMapPagination(totalPages, totalItems) {
+            const paginationEl = document.getElementById('mapReportsPagination');
+            if (!paginationEl) return;
+            if (totalItems <= mapItemsPerPage) {
+                paginationEl.innerHTML = totalItems > 0 ? `<div class="page-info">Total ${totalItems} data</div>` : '';
+                return;
+            }
+
+            paginationEl.innerHTML = `
+                <button class="btn-page" onclick="changeMapPage(1)" ${currentMapPage === 1 ? 'disabled' : ''}>
+                    <i class="fas fa-angle-double-left"></i>
+                </button>
+                <button class="btn-page" onclick="changeMapPage(${currentMapPage - 1})" ${currentMapPage === 1 ? 'disabled' : ''}>
+                    <i class="fas fa-angle-left"></i>
+                </button>
+                <div class="page-info">Halaman ${currentMapPage} dari ${totalPages} (${totalItems} data)</div>
+                <button class="btn-page" onclick="changeMapPage(${currentMapPage + 1})" ${currentMapPage === totalPages ? 'disabled' : ''}>
+                    <i class="fas fa-angle-right"></i>
+                </button>
+                <button class="btn-page" onclick="changeMapPage(${totalPages})" ${currentMapPage === totalPages ? 'disabled' : ''}>
+                    <i class="fas fa-angle-double-right"></i>
+                </button>
+            `;
+        }
+
+        function changeMapPage(page) {
+            currentMapPage = page;
+            renderMapTable(allReports);
+        }
+
+        function renderMapTable(data) {
+            const tbody = document.getElementById('mapReportTable');
+            if (!tbody) return;
+
+            const totalItems = data.length;
+            const totalPages = Math.ceil(totalItems / mapItemsPerPage);
+
+            if (currentMapPage > totalPages && totalPages > 0) {
+                currentMapPage = totalPages;
+            }
+
+            const startIndex = (currentMapPage - 1) * mapItemsPerPage;
+            const endIndex = startIndex + mapItemsPerPage;
+            const paginatedData = data.slice(startIndex, endIndex);
+
+            if (paginatedData.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 3rem; color: #94a3b8;">
+                            <i class="far fa-folder-open" style="font-size: 2rem; margin-bottom: 1rem; display: block;"></i>
+                            Tidak ada data untuk ditampilkan.
+                        </td>
+                    </tr>`;
+                renderMapPagination(0, 0);
+                return;
+            }
+
+            let contentHtml = '';
+            paginatedData.forEach(item => {
+                const dateObj = new Date(item.created_at);
+                const date = dateObj.toLocaleDateString("id-ID", {
+                    day: 'numeric', month: 'short', year: 'numeric'
+                }) + ' ' + dateObj.toLocaleTimeString("id-ID", { hour: '2-digit', minute: '2-digit' }).replace('.', ':');
+
+                let statusBadge = '';
+                if (item.status === 'verified') statusBadge = `<span class="badge status-verified">Verified</span>`;
+                else if (item.status === 'rejected') statusBadge = `<span class="badge status-rejected">Rejected</span>`;
+                else statusBadge = `<span class="badge status-pending">Pending</span>`;
+
+                const sourceText = item.report_source === 'admin' ? 'Teknis Dinas' : 'Warga';
+
+                contentHtml += `
+                    <tr>
+                        <td style="font-weight: 500;">${date}</td>
+                        <td><span class="badge" style="background: #f1f5f9; color: #475569; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600;">${sourceText}</span></td>
+                        <td style="font-weight: 600;">${item.reporter_name || 'Admin'}</td>
+                        <td>${item.district || '-'}</td>
+                        <td style="max-width: 250px;">
+                            <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${item.description || '-'}</div>
+                        </td>
+                        <td>${statusBadge}</td>
+                        <td style="text-align: center;">
+                            <button onclick="openActionModal(${item.id})" class="action-btn-small" style="background: white; border: 1px solid #e2e8f0; color: #3b82f6; cursor: pointer; padding: 6px 12px; border-radius: 6px;">
+                                <i class="fas fa-cog"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = contentHtml;
+            renderMapPagination(totalPages, totalItems);
         }
 
         function filterAndRender() {
