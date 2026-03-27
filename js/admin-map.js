@@ -22,9 +22,10 @@ function initAdminMap() {
     const container = document.getElementById('admin-map');
     if (adminMap || !container || container.offsetParent === null) return;
 
-    // Initialize Map
+    // Initialize Map with Canvas for performance
     adminMap = L.map('admin-map', {
-        zoomControl: false
+        zoomControl: false,
+        preferCanvas: true
     }).setView([-6.8943, 110.6373], 12);
 
     L.control.zoom({ position: 'bottomright' }).addTo(adminMap);
@@ -148,8 +149,14 @@ function renderAdminMap(reports) {
         const { latitude, longitude, status, id, district, reporter_name } = report;
         const color = getStatusColor(status);
 
-        const marker = L.marker([latitude, longitude], {
-            icon: createMarkerIcon(status)
+        // Canvas-based CircleMarker for 10k+ data points performance
+        const marker = L.circleMarker([latitude, longitude], {
+            radius: 6,
+            fillColor: color,
+            color: 'white',
+            weight: 2,
+            opacity: 1,
+            fillOpacity: 1
         });
 
         // Status indicator in popup

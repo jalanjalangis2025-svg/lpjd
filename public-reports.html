@@ -351,6 +351,7 @@
                 <table id="reportsTable">
                     <thead>
                         <tr>
+                            <th style="width: 50px;">No.</th>
                             <th>Tanggal</th>
                             <th>Pelapor</th>
                             <th>Lokasi</th>
@@ -562,11 +563,14 @@
         function renderReports(reports) {
             const tbody = document.getElementById('reportsBody');
             if (reports.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px;">Belum ada laporan warga.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px;">Belum ada laporan warga.</td></tr>';
                 return;
             }
 
-            tbody.innerHTML = reports.map(report => {
+            const startIndex = (currentPage - 1) * itemsPerPage;
+
+            tbody.innerHTML = reports.map((report, index) => {
+                const rowNumber = startIndex + index + 1;
                 const date = new Date(report.created_at).toLocaleDateString('id-ID', {
                     day: 'numeric', month: 'short', year: 'numeric',
                     hour: '2-digit', minute: '2-digit'
@@ -582,6 +586,7 @@
 
                 return `
                     <tr>
+                        <td style="color: #64748b; font-weight: 600;">${rowNumber}</td>
                         <td style="white-space: nowrap;">${date}</td>
                         <td style="font-weight: 500;">${report.reporter_name || 'Anonim'}</td>
                         <td>${report.district}</td>

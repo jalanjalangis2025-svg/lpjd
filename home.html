@@ -69,17 +69,17 @@
         </div>
 
         <div class="nav-menu" id="navMenu">
-            <a onclick="switchView('reports'); switchReportTab('public'); toggleMenu()" id="nav-public-reports">
-
-            </a>
             <a onclick="switchView('dashboard'); toggleMenu()" class="nav-item active" id="nav-dashboard">
                 <i class="fas fa-home"></i> Dashboard
             </a>
             <a onclick="switchView('map'); toggleMenu()" class="nav-item" id="nav-map">
                 <i class="fas fa-map"></i> Maps
             </a>
-            <a onclick="switchView('reports'); toggleMenu()" class="nav-item" id="nav-reports">
-                <i class="fas fa-list-alt"></i> Data Laporan
+            <a onclick="switchView('reports'); switchReportTab('public'); toggleMenu()" class="nav-item" id="nav-public-reports">
+                <i class="fas fa-users"></i> Laporan Warga
+            </a>
+            <a onclick="switchView('reports'); switchReportTab('admin'); toggleMenu()" class="nav-item" id="nav-reports">
+                <i class="fas fa-hard-hat"></i> Data Teknis
             </a>
             <a onclick="switchView('print'); toggleMenu()" class="nav-item" id="nav-print">
                 <i class="fas fa-print"></i> Cetak Laporan
@@ -174,6 +174,7 @@
                 <table>
                     <thead>
                         <tr>
+                            <th style="width: 50px;">No.</th>
                             <th>Tanggal</th>
                             <th>Sumber</th>
                             <th>Pelapor</th>
@@ -206,6 +207,10 @@
                     <button class="action-btn btn-primary" onclick="window.location.href='/report-admin'">
                         <i class="fas fa-plus"></i> Input Manual
                     </button>
+                    <button class="action-btn" style="background: #8b5cf6; color: white;" onclick="document.getElementById('geoJsonInput').click()">
+                        <i class="fas fa-file-import"></i> Bulk Import GeoJSON
+                    </button>
+                    <input type="file" id="geoJsonInput" accept=".geojson,.json" style="display: none;" onchange="handleGeoJsonImport(this)">
                     <button class="action-btn btn-secondary" onclick="window.open('/map', '_blank')">
                         <i class="fas fa-map"></i> Lihat Peta
                     </button>
@@ -430,6 +435,27 @@
         </div>
     </div>
 
+    <!-- Progress Modal for Import -->
+    <div class="modal-overlay" id="importModal" style="z-index: 10000; background: rgba(0,0,0,0.8);">
+        <div class="modal-content" style="max-width: 500px; text-align: center; padding: 2.5rem;">
+            <div id="importSpinner" style="font-size: 3.5rem; color: #8b5cf6; margin-bottom: 1.5rem;">
+                <i class="fas fa-circle-notch fa-spin"></i>
+            </div>
+            <h2 id="importTitle" style="margin-bottom: 0.5rem; color: #1e293b;">Mengimport Data...</h2>
+            <p id="importStatus" style="color: #64748b; margin-bottom: 1.5rem; font-size: 1.1rem;">Menyiapkan file GeoJSON</p>
+            
+            <div style="width: 100%; height: 10px; background: #e2e8f0; border-radius: 5px; overflow: hidden; margin-bottom: 1.5rem;">
+                <div id="importProgress" style="width: 0%; height: 100%; background: #8b5cf6; transition: width 0.3s ease;"></div>
+            </div>
+            
+            <div id="importStats" style="font-size: 0.9rem; color: #94a3b8;">
+                Berhasil: <span id="importSuccessCount">0</span> | Gagal: <span id="importErrorCount">0</span>
+            </div>
+            
+            <button id="closeImportBtn" onclick="closeImportModal()" class="btn-primary" style="margin-top: 2rem; display: none; width: 100%;">Tutup</button>
+        </div>
+    </div>
+
     <!-- Image Modal -->
     <div class="modal-overlay" id="imageModal" style="z-index: 9999; background: rgba(0,0,0,0.9);">
         <div class="modal-content"
@@ -452,6 +478,8 @@
 
     <script src="js/supabase.js"></script>
     <script src="js/guard.js"></script>
+    <script src="https://unpkg.com/@turf/turf/turf.min.js"></script>
+    <script src="js/import.js"></script>
     <script src="js/admin-map.js"></script>
     <script>
         let allReports = [];
@@ -572,8 +600,13 @@
         function switchView(viewName) {
             // Update Menu Active State
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-            if (viewName === 'reports' && currentTab === 'public') {
-                document.getElementById('nav-public-reports').classList.add('active');
+            
+            if (viewName === 'reports') {
+                if (currentTab === 'public') {
+                    document.getElementById('nav-public-reports').classList.add('active');
+                } else {
+                    document.getElementById('nav-reports').classList.add('active');
+                }
             } else {
                 document.getElementById(`nav-${viewName}`).classList.add('active');
             }
@@ -628,24 +661,46 @@
                 return;
             }
 
-            const { data, error } = await sb
-                .from('road_reports')
-                .select('*')
-                .is('deleted_at', null)
-                .order('created_at', { ascending: false });
+            try {
+                let allData = [];
+                let from = 0;
+                let to = 999;
+                let finished = false;
 
-            if (error) {
-                console.error("Error:", error);
-                return;
-            }
+                // Loop to fetch all records (1000 per batch)
+                while (!finished) {
+                    const { data, error } = await sb
+                        .from('road_reports')
+                        .select('*')
+                        .is('deleted_at', null)
+                        .order('created_at', { ascending: false })
+                        .range(from, to);
 
-            allReports = data || [];
-            updateStats();
-            filterAndRender();
-            renderMapTable(allReports);
+                    if (error) throw error;
 
-            if (window.renderAdminMap) {
-                renderAdminMap(allReports);
+                    if (data && data.length > 0) {
+                        allData = allData.concat(data);
+                        if (data.length < 1000) {
+                            finished = true; // Last batch
+                        } else {
+                            from += 1000;
+                            to += 1000;
+                        }
+                    } else {
+                        finished = true;
+                    }
+                }
+
+                allReports = allData;
+                updateStats();
+                filterAndRender();
+                renderMapTable(allReports);
+
+                if (window.renderAdminMap) {
+                    renderAdminMap(allReports);
+                }
+            } catch (err) {
+                console.error("Gagal memuat laporan:", err);
             }
         }
 
@@ -713,7 +768,8 @@
             }
 
             let contentHtml = '';
-            paginatedData.forEach(item => {
+            paginatedData.forEach((item, index) => {
+                const rowNumber = startIndex + index + 1;
                 const dateObj = new Date(item.created_at);
                 const date = dateObj.toLocaleDateString("id-ID", {
                     day: 'numeric', month: 'short', year: 'numeric'
@@ -728,6 +784,7 @@
 
                 contentHtml += `
                     <tr>
+                        <td style="color: #64748b; font-weight: 600;">${rowNumber}</td>
                         <td style="font-weight: 500;">${date}</td>
                         <td><span class="badge" style="background: #f1f5f9; color: #475569; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600;">${sourceText}</span></td>
                         <td style="font-weight: 600;">${item.reporter_name || 'Admin'}</td>
@@ -810,6 +867,7 @@
             if (type === 'admin') {
                 headerHtml = `
                     <tr>
+                        <th style="width: 50px;">No.</th>
                         <th>Tanggal</th>
                         <th>Kecamatan</th>
                         <th>Dimensi (PxL)</th>
@@ -823,6 +881,7 @@
             } else {
                 headerHtml = `
                     <tr>
+                        <th style="width: 50px;">No.</th>
                         <th>Tanggal</th>
                         <th>Pelapor</th>
                         <th>Kontak</th>
@@ -848,7 +907,10 @@
             }
 
             let contentHtml = '';
-            data.forEach(item => {
+            const startIndex = (currentAdminPage - 1) * adminItemsPerPage;
+
+            data.forEach((item, index) => {
+                const rowNumber = startIndex + index + 1;
                 const dateObj = new Date(item.created_at);
                 const date = dateObj.toLocaleDateString("id-ID", {
                     day: 'numeric', month: 'short', year: 'numeric'
@@ -899,6 +961,7 @@
 
                     row = `
                         <tr>
+                            <td style="color: #64748b; font-weight: 600;">${rowNumber}</td>
                             <td style="font-weight: 500;">${date}</td>
                             <td>${item.district}</td>
                             <td>${dims}</td>
@@ -916,6 +979,7 @@
                 } else {
                     row = `
                         <tr>
+                            <td style="color: #64748b; font-weight: 600;">${rowNumber}</td>
                             <td style="font-weight: 500;">${date}</td>
                             <td style="font-weight: 600;">${item.reporter_name || 'Anonim'}</td>
                             <td style="font-size: 0.8em; color: #64748b;">${item.reporter_contact || '-'}</td>

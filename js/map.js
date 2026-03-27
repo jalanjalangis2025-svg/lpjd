@@ -1,6 +1,6 @@
-// Initialize Map
 const map = L.map('map', {
-    zoomControl: false // Move zoom control if needed, or keep default
+    zoomControl: false,
+    preferCanvas: true
 }).setView([-6.8943, 110.6373], 11);
 
 // Add Zoom Control to bottom right or custom position if needed
@@ -217,8 +217,14 @@ function applyFilters() {
     });
 
     filtered.forEach(r => {
-        const marker = L.marker([r.latitude, r.longitude], {
-            icon: createMarkerIcon(r.status)
+        const color = getStatusColor(r.status);
+        const marker = L.circleMarker([r.latitude, r.longitude], {
+            radius: 6,
+            fillColor: color,
+            color: 'white',
+            weight: 2,
+            opacity: 1,
+            fillOpacity: 1
         });
         marker.bindPopup(createPopup(r));
         layers.markers.addLayer(marker);
