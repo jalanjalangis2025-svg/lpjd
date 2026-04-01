@@ -311,9 +311,24 @@ async function loadClipGajahData() {
             if (!res.ok) continue;
             
             const data = await res.json();
-            console.log(`Successfully loaded road data from: ${file}`);
+            console.log(`Successfully loaded public road data from: ${file}`);
 
-            // 1. Main Condition Layer
+            // 1. High-Visibility Outline Layer (White background)
+            // Added for consistency with admin-map.js and better visibility
+            L.geoJSON(data, {
+                style: function () {
+                    return {
+                        color: 'white',
+                        weight: 12,
+                        opacity: 1,
+                        lineCap: 'round',
+                        lineJoin: 'round',
+                        interactive: false
+                    };
+                }
+            }).addTo(layers.roadConditions);
+
+            // 2. Main Condition Layer (Colored top)
             L.geoJSON(data, {
                 style: function (feature) {
                     const sdiCategory = getRobustProperty(feature.properties, ['SDI_Category', 'Jenis_keru', 'Jenis_ke_1', 'jenis_keru', 'Kondisi', 'kondisi'], 'Unknown');
@@ -373,9 +388,27 @@ async function loadClipGajahData() {
                         </div>
                     `;
                     
-                    const tooltipText = `${sdiCategory.toUpperCase()} - Ruas #${noRuas}`;
-                    layer.bindTooltip(tooltipText, { className: 'modern-tooltip', offset: [0, -10] });
-                    marker.bindTooltip(tooltipText, { className: 'modern-tooltip' });
+                    const tooltipText = `<div style="font-size: 0.8rem; opacity: 0.8;">KONDISI JALAN:</div><div style="font-size: 1rem;">${sdiCategory.toUpperCase()}</div>`;
+                    
+                    // Determine class for colored tooltip
+                    let tooltipClass = 'modern-tooltip';
+                    const c = sdiCategory.toLowerCase();
+                    if (c.includes('bagus') || c.includes('baik')) tooltipClass += ' bagus';
+                    else if (c.includes('sedang')) tooltipClass += ' sedang';
+                    else if (c.includes('ringan')) tooltipClass += ' ringan';
+                    else if (c.includes('berat') || c.includes('rusak')) tooltipClass += ' berat';
+
+                    const tooltipOptions = { 
+                        className: tooltipClass, 
+                        offset: [0, -10],
+                        sticky: true,
+                        permanent: false, // Back to hover-only
+                        direction: 'top',
+                        opacity: 1
+                    };
+
+                    layer.bindTooltip(tooltipText, tooltipOptions);
+                    marker.bindTooltip(tooltipText, tooltipOptions);
                     
                     layer.bindPopup(popup);
                     marker.bindPopup(popup);
@@ -384,6 +417,8 @@ async function loadClipGajahData() {
                     layers.roadConditions.addLayer(marker);
                 }
             }).addTo(layers.roadConditions);
+            
+            clipGajahLayer = true;
 
         } catch (err) {
             console.error(`Error loading GeoJSON from ${file}:`, err);
@@ -393,8 +428,6 @@ async function loadClipGajahData() {
 
 function toggleConditionLayer() {
     const isChecked = document.getElementById('conditionToggle').checked;
-    const statusLegend = document.getElementById('statusLegend');
-    const conditionLegend = document.getElementById('conditionLegend');
 
     if (isChecked) {
         // Mode Fokus Kondisi Jalan (Garis Menonjol)
@@ -412,8 +445,6 @@ function toggleConditionLayer() {
         
         // Hide markers for focus
         layers.markers.remove();
-        statusLegend.style.display = 'none';
-        conditionLegend.style.display = 'block';
     } else {
         // Mode Standar (Markers + Garis Ruas)
         mapContainer.classList.remove('paper-mode');
@@ -424,9 +455,6 @@ function toggleConditionLayer() {
         layers.markers.addTo(map);
         
         applyFilters(); 
-        
-        statusLegend.style.display = 'block';
-        conditionLegend.style.display = 'none';
     }
 }
 
@@ -534,3 +562,6 @@ map.on('moveend', () => {
         drawGraticule();
     }
 });
+
+// Initial check after load
+setTimeout(loadMapData, 500);

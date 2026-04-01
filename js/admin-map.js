@@ -227,10 +227,39 @@ async function loadClipGajahData() {
                             </div>
                         </div>
                     `;
+                    const tooltipText = `<div style="font-size: 0.8rem; opacity: 0.8;">KONDISI JALAN:</div><div style="font-size: 1rem;">${sdiCategory.toUpperCase()}</div>`;
+                    
+                    // Determine class for colored tooltip
+                    let tooltipClass = 'modern-tooltip';
+                    const c = sdiCategory.toLowerCase();
+                    if (c.includes('bagus') || c.includes('baik')) tooltipClass += ' bagus';
+                    else if (c.includes('sedang')) tooltipClass += ' sedang';
+                    else if (c.includes('ringan')) tooltipClass += ' ringan';
+                    else if (c.includes('berat') || c.includes('rusak')) tooltipClass += ' berat';
+
+                    const tooltipOptions = { 
+                        className: tooltipClass, 
+                        offset: [0, -10],
+                        sticky: true,
+                        permanent: false, // Back to hover-only
+                        direction: 'top',
+                        opacity: 1
+                    };
+
+                    layer.bindTooltip(tooltipText, tooltipOptions);
+                    
+                    // Add midpoint marker for better clicking and label positioning
+                    const marker = L.marker(latLng, { icon: createModernPin(color), interactive: true });
+                    marker.bindTooltip(tooltipText, tooltipOptions);
+                    marker.bindPopup(popup);
+                    layers.roadConditions.addLayer(marker);
+
                     layer.bindPopup(popup);
                     layer.bindTooltip(`RUAS: ${noRuas}`, { sticky: true });
                 }
             }).addTo(layers.roadConditions);
+            
+            clipGajahLayer = true;
 
         } catch (err) {
             console.error(`Error loading GeoJSON from ${file}:`, err);
@@ -355,6 +384,32 @@ function refreshMapSize() {
     if (adminMap) {
         setTimeout(() => {
             adminMap.invalidateSize();
+            
+            // Sync with zoom visibility
+            if (adminMap.getZoom() < 14) {
+                document.querySelectorAll('.modern-tooltip').forEach(el => el.style.display = 'none');
+            }
         }, 200);
     }
 }
+
+// Control label visibility based on zoom for Admin Map
+setTimeout(() => {
+    if (adminMap) {
+        adminMap.on('zoomend', function() {
+            const zoomSize = adminMap.getZoom();
+            const tooltips = document.querySelectorAll('.modern-tooltip');
+            
+            if (zoomSize < 14) {
+                tooltips.forEach(el => el.style.display = 'none');
+            } else {
+                tooltips.forEach(el => el.style.display = 'block');
+            }
+        });
+        
+        // Initial check
+        if (adminMap.getZoom() < 14) {
+            document.querySelectorAll('.modern-tooltip').forEach(el => el.style.display = 'none');
+        }
+    }
+}, 2000);

@@ -1,5 +1,5 @@
 /* Fullscreen Map Styles */
-body {
+.map-page-body {
     margin: 0;
     padding: 0;
     font-family: 'Plus Jakarta Sans', sans-serif;
@@ -124,41 +124,60 @@ body {
     gap: 8px;
 }
 
-/* Legend Card */
+/* Legend Card - Modern Floating Glass */
 .legend-card {
     position: absolute;
     bottom: 30px;
     right: 20px;
-    background: white;
-    padding: 20px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    padding: 18px;
     border-radius: 16px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.2);
     z-index: 1000;
-    min-width: 180px;
-}
-
-/* GIS Style Legend */
-#map.paper-mode ~ .legend-card {
-    border: 2px solid #1e293b;
-    border-radius: 0;
-    box-shadow: none;
-    font-family: 'Courier New', Courier, monospace; /* Technical font */
+    min-width: 200px;
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    transition: all 0.3s ease;
 }
 
 .legend-card h3 {
-    margin: 0 0 15px 0;
-    font-size: 1rem;
+    margin: 0 0 12px 0;
+    font-size: 0.85rem;
     color: #1e293b;
-    font-weight: 700;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.legend-section {
+    margin-bottom: 15px;
+}
+
+.legend-section:last-child {
+    margin-bottom: 0;
 }
 
 .legend-item {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
     margin-bottom: 8px;
-    font-size: 0.9rem;
+    font-size: 0.82rem;
     color: #475569;
+    font-weight: 600;
+    padding: 6px 10px;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    cursor: default;
+}
+
+.legend-item:hover {
+    background: rgba(30, 41, 59, 0.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    transform: translateX(4px);
 }
 
 .legend-item:last-child {
@@ -223,19 +242,25 @@ body {
 
 /* Hover Tooltip */
 .modern-tooltip {
-    background: rgba(30, 41, 59, 0.95);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    color: white;
+    background: rgba(255, 255, 255, 0.95);
+    border: 2px solid #1e293b;
+    color: #1e293b;
     border-radius: 8px;
-    padding: 6px 12px;
+    padding: 8px 12px;
     font-family: 'Plus Jakarta Sans', sans-serif;
-    font-weight: 700;
+    font-weight: 800;
     font-size: 0.85rem;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+    pointer-events: none;
 }
 
+.modern-tooltip.bagus { border-color: #22c55e; color: #15803d; }
+.modern-tooltip.sedang { border-color: #eab308; color: #a16207; }
+.modern-tooltip.ringan { border-color: #f97316; color: #c2410c; }
+.modern-tooltip.berat { border-color: #ef4444; color: #b91c1c; }
+
 .modern-tooltip::before {
-    border-right-color: rgba(30, 41, 59, 0.95) !important;
+    display: none !important; /* Remove triangle for cleaner look */
 }
 
 /* Navigation Button in Popup */
@@ -283,25 +308,35 @@ body {
 }
 
 .legend-section-title {
-    font-size: 0.85rem;
-    font-weight: 700;
-    margin: 12px 0 8px 0;
-    color: #64748b;
+    font-size: 0.75rem;
+    font-weight: 800;
+    margin: 15px 0 10px 0;
+    color: #94a3b8;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 1px;
+    border-top: 1px solid #f1f5f9;
+    padding-top: 12px;
 }
 
 .line-legend {
-    width: 20px;
-    height: 4px;
-    border-radius: 2px;
+    width: 24px;
+    height: 6px;
+    border-radius: 3px;
     display: inline-block;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
 .line-legend.bagus { background: #22c55e; }
 .line-legend.sedang { background: #eab308; }
 .line-legend.ringan { background: #f97316; }
 .line-legend.berat { background: #ef4444; }
+
+.legend-hint {
+    font-size: 0.7rem;
+    color: #94a3b8;
+    margin-left: auto;
+    font-weight: 500;
+}
 
 /* Mobile Responsive */
 @media (max-width: 768px) {
@@ -339,7 +374,7 @@ body {
     }
 }
 
-.container {
+.map-page-body .container {
     max-width: 1600px;
     /* Wider for dashboard feel */
     margin: 0 auto;
@@ -417,7 +452,8 @@ body {
     margin-bottom: 2rem;
 }
 
-.stat-card {
+/* Map-Specific Stats (Inside map page only) */
+.map-page-body .stat-card {
     background: rgba(30, 41, 59, 0.6);
     backdrop-filter: blur(12px);
     border: 1px solid rgba(255, 255, 255, 0.05);
@@ -530,7 +566,7 @@ body {
 }
 
 /* Buttons - Gradient Glass */
-.btn {
+.map-page-body .btn {
     padding: 1rem 2rem;
     border-radius: 12px;
     font-weight: 600;
@@ -545,25 +581,25 @@ body {
     gap: 0.8rem;
 }
 
-.btn-primary {
+.map-page-body .btn-primary {
     background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
     color: white;
     box-shadow: 0 10px 20px -5px rgba(37, 99, 235, 0.5);
 }
 
-.btn-primary:hover {
+.map-page-body .btn-primary:hover {
     transform: translateY(-2px);
     box-shadow: 0 15px 30px -5px rgba(37, 99, 235, 0.6);
     filter: brightness(1.1);
 }
 
-.btn-secondary {
+.map-page-body .btn-secondary {
     background: rgba(255, 255, 255, 0.05);
     color: #e2e8f0;
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.btn-secondary:hover {
+.map-page-body .btn-secondary:hover {
     background: rgba(255, 255, 255, 0.1);
     border-color: rgba(255, 255, 255, 0.3);
     color: #fff;
@@ -599,7 +635,7 @@ body {
     box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.5);
 }
 
-.section-title {
+.map-page-body .section-title {
     color: #fff;
     font-size: 1.2rem;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);

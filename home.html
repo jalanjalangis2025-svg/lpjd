@@ -17,6 +17,7 @@
 
     <link rel="stylesheet" href="css/common.css">
     <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/map.css">
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
         integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
@@ -162,8 +163,51 @@
         <!-- MAP VIEW -->
         <div id="map-view" class="view-section">
             <h2 style="margin-bottom: 20px;">Maps Admin (Kelola Data)</h2>
-            <div id="admin-map"
-                style="height: 500px; width: 100%; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 30px;">
+            <div class="map-wrapper" style="position: relative;">
+                <div id="admin-map"
+                    style="height: 500px; width: 100%; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 30px;">
+                </div>
+
+                <!-- Floating Legend Admin -->
+                <div class="legend-card" id="adminMapLegend" style="bottom: 50px; right: 20px;">
+                    <h3><i class="fas fa-layer-group"></i> Legenda Peta</h3>
+                    
+                    <div class="legend-section">
+                        <h4 class="legend-section-title">Status Laporan</h4>
+                        <div class="legend-item">
+                            <span class="dot verified"></span>
+                            <span style="color: #059669; font-weight: 800;">Terverifikasi</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="dot pending"></span>
+                            <span style="color: #d97706; font-weight: 800;">Menunggu</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="dot rejected"></span>
+                            <span style="color: #dc2626; font-weight: 800;">Ditolak</span>
+                        </div>
+                    </div>
+
+                    <div class="legend-section">
+                        <h4 class="legend-section-title">Kondisi Jalan (SDI)</h4>
+                        <div class="legend-item">
+                            <span class="line-legend bagus"></span>
+                            <span style="color: #15803d; font-weight: 800;">Bagus (0-50)</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="line-legend sedang"></span>
+                            <span style="color: #a16207; font-weight: 800;">Sedang (50-100)</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="line-legend ringan"></span>
+                            <span style="color: #c2410c; font-weight: 800;">Rusak Ringan (100-150)</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="line-legend berat"></span>
+                            <span style="color: #b91c1c; font-weight: 800;">Rusak Berat (>150)</span>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Table for Map View -->
