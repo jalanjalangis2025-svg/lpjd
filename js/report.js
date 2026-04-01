@@ -90,18 +90,22 @@ async function submitReport(e, source, id = null) {
 
     // Collect Data
     const formData = {
-        report_source: source, // 'admin' usually
         district: document.getElementById('district').value,
         description: document.getElementById('description').value,
         latitude: parseFloat(document.getElementById('latitude').value),
         longitude: parseFloat(document.getElementById('longitude').value),
     };
 
+    // Only set source for NEW reports
+    if (!id) {
+        formData.report_source = source;
+    }
+
     // Source specific fields
     if (source === 'public') {
         formData.reporter_name = document.getElementById('reporter_name').value;
         formData.reporter_contact = document.getElementById('reporter_contact').value;
-        formData.status = 'pending'; // Public reports are pending by default
+        if (!id) formData.status = 'pending'; // New public reports are pending
     } else {
         formData.report_date = document.getElementById('report_date').value;
         formData.damage_length = parseFloat(document.getElementById('damage_length').value) || 0;
@@ -111,7 +115,7 @@ async function submitReport(e, source, id = null) {
         formData.pci_value = parseFloat(document.getElementById('pci_value').value) || null;
         formData.pci_category = document.getElementById('pci_category').value || null;
         
-        // If Admin submits, we mark it as verified
+        // If Admin submits/edits, we mark it as verified by default
         formData.status = 'verified';
     }
 

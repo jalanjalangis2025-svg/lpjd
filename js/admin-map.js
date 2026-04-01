@@ -328,6 +328,8 @@ function renderAdminMap(reports) {
 
     layers.markers.clearLayers();
 
+    // Report markers (verified/pending/rejected) disabled for admin map per user request
+    /*
     reports.forEach(report => {
         const { latitude, longitude, status, id, district, reporter_name, report_source } = report;
         const color = getMarkerColor(report);
@@ -376,8 +378,7 @@ function renderAdminMap(reports) {
         marker.bindPopup(popupContent);
         layers.markers.addLayer(marker);
     });
-
-
+    */
 }
 
 function refreshMapSize() {

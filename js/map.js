@@ -151,24 +151,31 @@ function createModernPin(color) {
 }
 
 function getMarkerColor(report) {
-    // Prioritize SDI/PCI category for color
+    // Premium Palette for markers
+    const PALETTE = {
+        teal: '#14b8a6',
+        orange: '#f59e0b',
+        red: '#f43f5e',
+        blue: '#3b82f6'
+    };
+
     const category = (report.sdi_category || report.pci_category || '').toLowerCase();
     
-    if (category.includes('baik') || category.includes('bagus')) return '#22c55e'; // Hijau
-    if (category.includes('sedang')) return '#eab308'; // Kuning
-    if (category.includes('ringan')) return '#f97316'; // Orange
-    if (category.includes('berat') || category.includes('rusak')) return '#ef4444'; // Merah
+    if (category.includes('baik') || category.includes('bagus')) return PALETTE.teal;
+    if (category.includes('sedang')) return PALETTE.orange;
+    if (category.includes('ringan')) return '#fb923c'; // Vivid Orange
+    if (category.includes('berat') || category.includes('rusak')) return PALETTE.red;
     
-    // Fallback to status color if category is empty
-    if (report.status === 'verified') return '#22c55e';
-    if (report.status === 'rejected') return '#ef4444';
-    return '#f59e0b'; // Default Yellow for pending without category
+    // Fallback to status color
+    if (report.status === 'verified') return PALETTE.teal;
+    if (report.status === 'rejected') return PALETTE.red;
+    return PALETTE.orange; 
 }
 
 function getStatusColor(status) {
-    if (status === 'verified') return '#22c55e'; // Green
-    if (status === 'rejected') return '#ef4444'; // Red
-    return '#eab308'; // Yellow
+    if (status === 'verified') return '#14b8a6'; // Teal
+    if (status === 'rejected') return '#f43f5e'; // Coral Red
+    return '#f59e0b'; // Orange
 }
 
 function createPopup(report) {
@@ -178,47 +185,51 @@ function createPopup(report) {
     const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${report.latitude},${report.longitude}`;
 
     return `
-        <div style="font-family: 'Plus Jakarta Sans', sans-serif; min-width: 260px; padding: 5px;">
-            <div style="font-weight: 800; font-size: 1.15rem; color: #1e293b; margin-bottom: 5px; line-height: 1.2;">${report.district || 'Data Jalan'}</div>
-            <div style="display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap;">
-                 <span style="background: ${color}15; color: ${color}; padding: 3px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; border: 1px solid ${color}30;">
+        <div style="font-family: 'Plus Jakarta Sans', sans-serif; min-width: 280px; padding: 12px; background: white; border-radius: 20px;">
+            <div style="font-weight: 800; font-size: 1.2rem; color: #0f172a; margin-bottom: 8px; line-height: 1.2; letter-spacing: -0.5px;">${report.district || 'Data Jalan'}</div>
+            
+            <div style="display: flex; gap: 8px; margin-bottom: 16px;">
+                 <span style="background: ${color}15; color: ${color}; padding: 4px 12px; border-radius: 50px; font-size: 0.7rem; font-weight: 800; border: 1px solid ${color}30; text-transform: uppercase; letter-spacing: 0.5px;">
                     ${statusLabel}
                  </span>
-                 <span style="background: #f1f5f9; color: #64748b; padding: 3px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; border: 1px solid #e2e8f0;">
-                    ${new Date(report.created_at).toLocaleDateString('id-ID')}
+                 <span style="background: #f8fafc; color: #94a3b8; padding: 4px 12px; border-radius: 50px; font-size: 0.7rem; font-weight: 700; border: 1px solid #f1f5f9;">
+                    <i class="far fa-calendar-alt"></i> ${new Date(report.created_at).toLocaleDateString('id-ID', {day: 'numeric', month: 'short'})}
                  </span>
             </div>
             
-            ${report.photo_url ? `<img src="${report.photo_url}" style="width: 100%; border-radius: 12px; margin-bottom: 12px; max-height: 160px; object-fit: cover; border: 1px solid #f1f5f9; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">` : ''}
+            ${report.photo_url ? `
+                <div style="position: relative; margin-bottom: 16px;">
+                    <img src="${report.photo_url}" style="width: 100%; border-radius: 16px; height: 180px; object-fit: cover; box-shadow: 0 12px 24px rgba(0,0,0,0.1);">
+                    <div style="position: absolute; bottom: 10px; right: 10px; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); color: white; padding: 4px 10px; border-radius: 8px; font-size: 0.65rem; font-weight: 600;">
+                        Foto Lokasi
+                    </div>
+                </div>
+            ` : ''}
             
-            <div style="background: #f8fafc; border-radius: 12px; padding: 12px; border: 1px solid #e2e8f0; margin-bottom: 15px; display: flex; justify-content: space-around;">
-                <div style="text-align: center;">
-                    <div style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px;">SDI INDEX</div>
-                    <div style="font-weight: 800; color: #334155; font-size: 1.1rem;">${(report.sdi_value !== null && report.sdi_value !== undefined) ? report.sdi_value : 0}</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;">
+                <div style="background: #f8fafc; border-radius: 16px; padding: 12px; border: 1px solid #f1f5f9; text-align: center;">
+                    <div style="font-size: 0.6rem; color: #94a3b8; text-transform: uppercase; font-weight: 800; letter-spacing: 0.8px; margin-bottom: 4px;">SDI Index</div>
+                    <div style="font-weight: 850; color: #1e293b; font-size: 1.2rem;">${(report.sdi_value !== null && report.sdi_value !== undefined) ? report.sdi_value : '0'}</div>
                 </div>
-                <div style="width: 1px; background: #e2e8f0;"></div>
-                <div style="text-align: center;">
-                    <div style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px;">PCI INDEX</div>
-                    <div style="font-weight: 800; color: #334155; font-size: 1.1rem;">${(report.pci_value !== null && report.pci_value !== undefined) ? report.pci_value : 0}</div>
+                <div style="background: #f8fafc; border-radius: 16px; padding: 12px; border: 1px solid #f1f5f9; text-align: center;">
+                    <div style="font-size: 0.6rem; color: #94a3b8; text-transform: uppercase; font-weight: 800; letter-spacing: 0.8px; margin-bottom: 4px;">PCI Index</div>
+                    <div style="font-weight: 850; color: #1e293b; font-size: 1.2rem;">${(report.pci_value !== null && report.pci_value !== undefined) ? report.pci_value : '0'}</div>
                 </div>
             </div>
 
-            <div style="font-size: 0.85rem; color: #475569; line-height: 1.5; margin-bottom: 15px; background: #fff; padding: 10px; border-radius: 8px; border: 1px dashed #e2e8f0;">
-                <i class="fas fa-quote-left" style="color: #cbd5e1; font-size: 0.7rem; margin-right: 5px;"></i>
-                ${report.description || 'Tidak ada deskripsi tambahan.'}
+            <div style="font-size: 0.85rem; color: #475569; line-height: 1.6; margin-bottom: 20px; background: #fff; padding: 12px; border-radius: 12px; border: 1px solid #f1f5f9; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">
+                ${report.description || 'Analisis kondisi jalan terlampir dalam laporan ini.'}
             </div>
 
-            <div style="display: flex; flex-direction: column; gap: 8px;">
-                <a href="${googleMapsUrl}" target="_blank" style="text-decoration: none; width: 100%; background: #3b82f6; color: white; text-align: center; padding: 12px; border-radius: 10px; font-weight: 700; font-size: 0.9rem; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); display: flex; align-items: center; justify-content: center; gap: 8px;">
-                    <i class="fas fa-directions"></i> Navigasi Maps
-                </a>
-            </div>
+            <a href="${googleMapsUrl}" target="_blank" style="text-decoration: none; width: 100%; background: #3b82f6; color: white; text-align: center; padding: 14px; border-radius: 14px; font-weight: 800; font-size: 0.85rem; box-shadow: 0 10px 20px -5px rgba(59, 130, 246, 0.4); display: flex; align-items: center; justify-content: center; gap: 10px; transition: all 0.3s;">
+                <i class="fas fa-location-arrow"></i> BUKA NAVIGASI MAPS
+            </a>
         </div>
     `;
 }
 
 async function loadMapData() {
-    // Show rough boundary immediately
+    // Show district boundary and base roads (visual parity with admin)
     drawDemakBoundary();
     if (!window.sb) {
         setTimeout(loadMapData, 500);
@@ -240,11 +251,13 @@ async function loadMapData() {
     allReports = data || [];
     populateDistrictFilter();
     
-    // Load road segments by default alongside reports
+    // Road segments (clip gajah) disabled for public map per user request
+    /*
     if (!clipGajahLayer) {
         await loadClipGajahData();
         layers.roadConditions.addTo(map);
     }
+    */
     
     applyFilters();
 }
