@@ -168,35 +168,37 @@ async function loadClipGajahData() {
                     ? feature.geometry.coordinates[Math.floor(feature.geometry.coordinates.length / 2)]
                     : feature.geometry.coordinates[0][Math.floor(feature.geometry.coordinates[0].length / 2)];
                 
-                const latLng = [coords[1], coords[0]];
                 const color = getConditionColor(feature.properties.Jenis_keru);
-                
-                // Add marker for the segment
-                const marker = L.marker(latLng, { 
-                    icon: createModernPin(color),
-                    interactive: true 
-                });
+                const latLng = [coords[1], coords[0]];
 
                 const popup = `
-                    <div style="font-family: 'Plus Jakarta Sans', sans-serif; min-width: 200px;">
-                        <div style="font-weight: 800; color: #1e293b; margin-bottom: 5px; font-size: 1rem;">${feature.properties.Name}</div>
-                        <div style="display: flex; gap: 8px; margin-bottom: 10px;">
-                             <span style="background: ${color}15; color: ${color}; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 700;">${feature.properties.Jenis_keru}</span>
-                             <span style="background: #f1f5f9; color: #64748b; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 700;">Ruas #${feature.properties.No_Ruas}</span>
+                    <div style="font-family: 'Plus Jakarta Sans', sans-serif; min-width: 260px; padding: 5px;">
+                        <div style="font-weight: 800; color: #1e293b; margin-bottom: 5px; font-size: 1.15rem; line-height: 1.2;">${feature.properties.Name}</div>
+                        <div style="display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap;">
+                             <span style="background: ${color}15; color: ${color}; padding: 3px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; border: 1px solid ${color}30;">${feature.properties.Jenis_keru}</span>
+                             <span style="background: #f1f5f9; color: #64748b; padding: 3px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; border: 1px solid #e2e8f0;">Ruas #${feature.properties.No_Ruas}</span>
                         </div>
-                        <div style="font-size: 0.85rem; color: #475569;">
-                            SDI: <strong>${feature.properties.SDI || feature.properties.Skor_kerus || 0}</strong> | 
-                            PCI: <strong>${feature.properties.PCI || 0}</strong>
+                        <div style="background: #f8fafc; border-radius: 12px; padding: 12px; border: 1px solid #e2e8f0; margin-bottom: 12px; display: flex; justify-content: space-around;">
+                            <div style="text-align: center;">
+                                <div style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px;">SDI INDEX</div>
+                                <div style="font-weight: 800; color: #334155; font-size: 1.1rem;">${feature.properties.SDI || feature.properties.Skor_kerus || 0}</div>
+                            </div>
+                            <div style="width: 1px; background: #e2e8f0;"></div>
+                            <div style="text-align: center;">
+                                <div style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px;">PCI INDEX</div>
+                                <div style="font-weight: 800; color: #334155; font-size: 1.1rem;">${feature.properties.PCI || 0}</div>
+                            </div>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=${latLng[0]},${latLng[1]}" target="_blank" style="text-decoration: none; width: 100%; background: #3b82f6; color: white; text-align: center; padding: 12px; border-radius: 10px; font-weight: 700; font-size: 0.9rem; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); display: flex; align-items: center; justify-content: center; gap: 8px;">
+                                <i class="fas fa-directions"></i> Navigasi Maps
+                            </a>
                         </div>
                     </div>
                 `;
                 layer.bindPopup(popup);
-                marker.bindPopup(popup);
                 
                 layer.bindTooltip(`RUAS: ${feature.properties.No_Ruas}`, { sticky: true });
-                marker.bindTooltip(`RUAS: ${feature.properties.No_Ruas}`, { className: 'modern-tooltip' });
-                
-                layers.roadConditions.addLayer(marker);
             }
         }).addTo(layers.roadConditions);
     } catch (err) {
@@ -204,7 +206,14 @@ async function loadClipGajahData() {
     }
 }
 
-function createModernPin(color) {
+function createModernPin(color, source = null) {
+    let iconHtml = '';
+    if (source === 'public') {
+        iconHtml = '<i class="fas fa-user" style="color: white; font-size: 10px; position: absolute; top: 22px; left: 50%; transform: translateX(-50%) rotate(20deg); text-shadow: 0 1px 2px rgba(0,0,0,0.5);"></i>';
+    } else if (source === 'admin') {
+        iconHtml = '<i class="fas fa-tools" style="color: white; font-size: 10px; position: absolute; top: 22px; left: 50%; transform: translateX(-50%) rotate(20deg); text-shadow: 0 1px 2px rgba(0,0,0,0.5);"></i>';
+    }
+
     return L.divIcon({
         className: 'pushpin-marker',
         html: `
@@ -222,6 +231,7 @@ function createModernPin(color) {
                     <ellipse cx="40" cy="22" rx="10" ry="4" fill="rgba(255,255,255,0.45)" />
                 </g>
             </svg>
+            ${iconHtml}
         `,
         iconSize: [45, 45],
         iconAnchor: [22, 45],
@@ -258,42 +268,41 @@ function renderAdminMap(reports) {
     layers.markers.clearLayers();
 
     reports.forEach(report => {
-        const { latitude, longitude, status, id, district, reporter_name } = report;
+        const { latitude, longitude, status, id, district, reporter_name, report_source } = report;
         const color = getMarkerColor(report);
         const marker = L.marker([latitude, longitude], {
-            icon: createModernPin(color)
+            icon: createModernPin(color, report_source)
         });
 
         let statusLabel = status === 'verified' ? 'Verified' : (status === 'rejected' ? 'Rejected' : 'Pending');
 
         const popupContent = `
-            <div style="font-family: 'Plus Jakarta Sans', sans-serif; min-width: 240px; padding: 5px;">
-                <div style="font-weight: 800; margin-bottom: 4px; font-size: 1.15rem; color: #1e293b;">${district || 'Lokasi'}</div>
+            <div style="font-family: 'Plus Jakarta Sans', sans-serif; min-width: 260px; padding: 5px;">
+                <div style="font-weight: 800; font-size: 1.15rem; color: #1e293b; margin-bottom: 5px; line-height: 1.2;">${district || 'Lokasi'}</div>
                 <div style="font-size: 0.85rem; color: #64748b; margin-bottom: 12px; display: flex; align-items: center; gap: 5px;">
                     <i class="fas fa-user-edit"></i> Pelapor: ${reporter_name || 'Admin'}
                 </div>
 
-                <div style="background: #f8fafc; border-radius: 10px; padding: 12px; border: 1px solid #e2e8f0; margin-bottom: 12px;">
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                        <div>
-                            <div style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px;">PCI Index</div>
-                            <div style="font-weight: 800; color: #334155; font-size: 1.1rem;">${(report.pci_value !== null && report.pci_value !== undefined) ? report.pci_value : 0}</div>
-                        </div>
-                        <div>
-                            <div style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px;">SDI Index</div>
-                            <div style="font-weight: 800; color: #334155; font-size: 1.1rem;">${(report.sdi_value !== null && report.sdi_value !== undefined) ? report.sdi_value : 0}</div>
-                        </div>
+                <div style="background: #f8fafc; border-radius: 12px; padding: 12px; border: 1px solid #e2e8f0; margin-bottom: 15px; display: flex; justify-content: space-around;">
+                    <div style="text-align: center;">
+                        <div style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px;">SDI INDEX</div>
+                        <div style="font-weight: 800; color: #334155; font-size: 1.1rem;">${(report.sdi_value !== null && report.sdi_value !== undefined) ? report.sdi_value : 0}</div>
+                    </div>
+                    <div style="width: 1px; background: #e2e8f0;"></div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px;">PCI INDEX</div>
+                        <div style="font-weight: 800; color: #334155; font-size: 1.1rem;">${(report.pci_value !== null && report.pci_value !== undefined) ? report.pci_value : 0}</div>
                     </div>
                 </div>
 
-                <div style="display: flex; flex-direction: column; gap: 8px;">
+                <div style="display: flex; flex-direction: column; gap: 10px;">
                     <button onclick="openActionModal(${id})" 
-                        style="width: 100%; background: #3b82f6; color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: 700; transition: all 0.2s; box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);">
+                        style="width: 100%; background: #3b82f6; color: white; border: none; padding: 12px; border-radius: 10px; cursor: pointer; font-weight: 700; font-size: 0.9rem; transition: all 0.2s; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); display: flex; align-items: center; justify-content: center; gap: 8px;">
                         <i class="fas fa-cog"></i> Kelola Laporan
                     </button>
                     
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 5px;">
-                         <span style="background: ${color}15; color: ${color}; padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 800; border: 1px solid ${color}30;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 5px;">
+                         <span style="background: ${color}15; color: ${color}; padding: 3px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 800; border: 1px solid ${color}30;">
                             ${statusLabel}
                         </span>
                         <span style="font-size: 0.75rem; color: #94a3b8; font-weight: 600;">ID #${id}</span>

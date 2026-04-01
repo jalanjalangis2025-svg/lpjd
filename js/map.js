@@ -178,41 +178,40 @@ function createPopup(report) {
     const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${report.latitude},${report.longitude}`;
 
     return `
-        <div style="font-family: 'Plus Jakarta Sans', sans-serif; min-width: 240px; padding: 5px;">
-            <div style="font-weight: 800; font-size: 1.15rem; color: #1e293b; margin-bottom: 4px;">${report.district || 'Data Jalan'}</div>
-            <div style="color: #64748b; font-size: 0.85rem; margin-bottom: 12px; display: flex; align-items: center; gap: 5px;">
-                <i class="fas fa-map-marker-alt" style="color: #64748b;"></i> ${report.location_details || 'Kabupaten Demak'}
+        <div style="font-family: 'Plus Jakarta Sans', sans-serif; min-width: 260px; padding: 5px;">
+            <div style="font-weight: 800; font-size: 1.15rem; color: #1e293b; margin-bottom: 5px; line-height: 1.2;">${report.district || 'Data Jalan'}</div>
+            <div style="display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap;">
+                 <span style="background: ${color}15; color: ${color}; padding: 3px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; border: 1px solid ${color}30;">
+                    ${statusLabel}
+                 </span>
+                 <span style="background: #f1f5f9; color: #64748b; padding: 3px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; border: 1px solid #e2e8f0;">
+                    ${new Date(report.created_at).toLocaleDateString('id-ID')}
+                 </span>
             </div>
             
-            ${report.photo_url ? `<img src="${report.photo_url}" style="width: 100%; border-radius: 12px; margin-bottom: 12px; max-height: 160px; object-fit: cover; border: 1px solid #f1f5f9;">` : ''}
+            ${report.photo_url ? `<img src="${report.photo_url}" style="width: 100%; border-radius: 12px; margin-bottom: 12px; max-height: 160px; object-fit: cover; border: 1px solid #f1f5f9; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">` : ''}
             
-            <div style="background: #f8fafc; border-radius: 10px; padding: 12px; border: 1px solid #e2e8f0; margin-bottom: 12px;">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                    <div>
-                        <div style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px;">PCI Index</div>
-                        <div style="font-weight: 800; color: #334155; font-size: 1.1rem;">${(report.pci_value !== null && report.pci_value !== undefined) ? report.pci_value : 0}</div>
-                    </div>
-                    <div>
-                        <div style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px;">SDI Index</div>
-                        <div style="font-weight: 800; color: #334155; font-size: 1.1rem;">${(report.sdi_value !== null && report.sdi_value !== undefined) ? report.sdi_value : 0}</div>
-                    </div>
+            <div style="background: #f8fafc; border-radius: 12px; padding: 12px; border: 1px solid #e2e8f0; margin-bottom: 15px; display: flex; justify-content: space-around;">
+                <div style="text-align: center;">
+                    <div style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px;">SDI INDEX</div>
+                    <div style="font-weight: 800; color: #334155; font-size: 1.1rem;">${(report.sdi_value !== null && report.sdi_value !== undefined) ? report.sdi_value : 0}</div>
+                </div>
+                <div style="width: 1px; background: #e2e8f0;"></div>
+                <div style="text-align: center;">
+                    <div style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px;">PCI INDEX</div>
+                    <div style="font-weight: 800; color: #334155; font-size: 1.1rem;">${(report.pci_value !== null && report.pci_value !== undefined) ? report.pci_value : 0}</div>
                 </div>
             </div>
 
-            <div style="font-size: 0.9rem; color: #475569; line-height: 1.5; margin-bottom: 15px;">
+            <div style="font-size: 0.85rem; color: #475569; line-height: 1.5; margin-bottom: 15px; background: #fff; padding: 10px; border-radius: 8px; border: 1px dashed #e2e8f0;">
+                <i class="fas fa-quote-left" style="color: #cbd5e1; font-size: 0.7rem; margin-right: 5px;"></i>
                 ${report.description || 'Tidak ada deskripsi tambahan.'}
             </div>
 
             <div style="display: flex; flex-direction: column; gap: 8px;">
-                <a href="${googleMapsUrl}" target="_blank" class="btn-nav-google">
+                <a href="${googleMapsUrl}" target="_blank" style="text-decoration: none; width: 100%; background: #3b82f6; color: white; text-align: center; padding: 12px; border-radius: 10px; font-weight: 700; font-size: 0.9rem; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); display: flex; align-items: center; justify-content: center; gap: 8px;">
                     <i class="fas fa-directions"></i> Navigasi Maps
                 </a>
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 5px;">
-                     <span style="background: ${color}15; color: ${color}; padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 800; border: 1px solid ${color}30;">
-                        ${statusLabel}
-                    </span>
-                    <span style="font-size: 0.75rem; color: #94a3b8; font-weight: 600;">${new Date(report.created_at).toLocaleDateString('id-ID')}</span>
-                </div>
             </div>
         </div>
     `;
@@ -338,35 +337,25 @@ async function loadClipGajahData() {
                 
                 const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${latLng[0]},${latLng[1]}`;
                 const popup = `
-                    <div style="font-family: 'Plus Jakarta Sans', sans-serif; min-width: 240px; padding: 5px;">
-                        <div style="font-weight: 800; color: #1e293b; margin-bottom: 4px; font-size: 1.15rem;">${feature.properties.Name}</div>
-                        <div style="display: flex; gap: 8px; margin-bottom: 12px;">
-                             <span style="background: ${color}15; color: ${color}; padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 800; border: 1px solid ${color}30;">
-                                ${feature.properties.Jenis_keru}
-                             </span>
-                             <span style="background: #f1f5f9; color: #64748b; padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 800;">
-                                Ruas #${feature.properties.No_Ruas}
-                             </span>
+                    <div style="font-family: 'Plus Jakarta Sans', sans-serif; min-width: 260px; padding: 5px;">
+                        <div style="font-weight: 800; color: #1e293b; margin-bottom: 5px; font-size: 1.15rem; line-height: 1.2;">${feature.properties.Name}</div>
+                        <div style="display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap;">
+                             <span style="background: ${color}15; color: ${color}; padding: 3px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; border: 1px solid ${color}30;">${feature.properties.Jenis_keru}</span>
+                             <span style="background: #f1f5f9; color: #64748b; padding: 3px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; border: 1px solid #e2e8f0;">Ruas #${feature.properties.No_Ruas}</span>
                         </div>
-                        
-                        <div style="background: #f8fafc; border-radius: 10px; padding: 12px; border: 1px solid #e2e8f0; margin-bottom: 12px;">
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                                <div>
-                                    <div style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px;">SDI Score</div>
-                                    <div style="font-weight: 800; color: #334155; font-size: 1.1rem;">${feature.properties.SDI || feature.properties.Skor_kerus || 0}</div>
-                                </div>
-                                <div>
-                                    <div style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px;">PCI Index</div>
-                                    <div style="font-weight: 800; color: #334155; font-size: 1.1rem;">${feature.properties.PCI || 0}</div>
-                                </div>
+                        <div style="background: #f8fafc; border-radius: 12px; padding: 12px; border: 1px solid #e2e8f0; margin-bottom: 12px; display: flex; justify-content: space-around;">
+                            <div style="text-align: center;">
+                                <div style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px;">SDI INDEX</div>
+                                <div style="font-weight: 800; color: #334155; font-size: 1.1rem;">${feature.properties.SDI || feature.properties.Skor_kerus || 0}</div>
+                            </div>
+                            <div style="width: 1px; background: #e2e8f0;"></div>
+                            <div style="text-align: center;">
+                                <div style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px;">PCI INDEX</div>
+                                <div style="font-weight: 800; color: #334155; font-size: 1.1rem;">${feature.properties.PCI || 0}</div>
                             </div>
                         </div>
-
                         <div style="display: flex; flex-direction: column; gap: 8px;">
-                            <div style="font-size: 0.85rem; color: #64748b; display: flex; align-items: center; gap: 6px;">
-                                <i class="fas fa-ruler-horizontal"></i> Panjang Ruas: <strong>${(feature.properties.Panjang).toFixed(2)} km</strong>
-                            </div>
-                            <a href="${googleMapsUrl}" target="_blank" class="btn-nav-google">
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=${latLng[0]},${latLng[1]}" target="_blank" style="text-decoration: none; width: 100%; background: #3b82f6; color: white; text-align: center; padding: 12px; border-radius: 10px; font-weight: 700; font-size: 0.9rem; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); display: flex; align-items: center; justify-content: center; gap: 8px;">
                                 <i class="fas fa-directions"></i> Navigasi Maps
                             </a>
                         </div>
