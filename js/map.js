@@ -266,12 +266,23 @@ function populateDistrictFilter() {
 // --- ROAD CONDITION LOGIC (ArcMap Style) ---
 
 function getConditionColor(condition) {
-    const c = condition.toLowerCase();
+    const c = (condition || '').toLowerCase();
     if (c.includes('bagus') || c.includes('baik')) return '#22c55e'; // Green
     if (c.includes('sedang')) return '#eab308'; // Yellow
     if (c.includes('ringan')) return '#f97316'; // Orange
     if (c.includes('berat') || c.includes('rusak')) return '#ef4444'; // Red
     return '#94a3b8'; // Grey default
+}
+
+function getRobustProperty(props, keys, defaultValue = null) {
+    if (!props) return defaultValue;
+    const lowerKeys = keys.map(k => k.toLowerCase());
+    for (const key in props) {
+        if (lowerKeys.includes(key.toLowerCase())) {
+            return props[key];
+        }
+    }
+    return defaultValue;
 }
 
 function drawGraticule() {
@@ -288,95 +299,95 @@ function drawGraticule() {
 }
 
 async function loadClipGajahData() {
-    try {
-        const res = await fetch('/hasilclipgajah.geojson');
-        if (!res.ok) return;
-        const data = await res.json();
+    // Clear existing to avoid duplicates
+    layers.roadConditions.clearLayers();
+    
+    // List of files to attempt loading (supports multiple GIS exports)
+    const geojsonFiles = ['/hasilclipgajah.geojson', '/clipan.geojson'];
 
-        // Clear existing to avoid duplicates
-        layers.roadConditions.clearLayers();
+    for (const file of geojsonFiles) {
+        try {
+            const res = await fetch(file);
+            if (!res.ok) continue;
+            
+            const data = await res.json();
+            console.log(`Successfully loaded road data from: ${file}`);
 
-        // High-Visibility Outline Layer (White background)
-        L.geoJSON(data, {
-            style: function () {
-                return {
-                    color: 'white',
-                    weight: 12, // Refined outline
-                    opacity: 1,
-                    lineCap: 'round',
-                    lineJoin: 'round',
-                    interactive: false
-                };
-            }
-        }).addTo(layers.roadConditions);
+            // 1. Main Condition Layer
+            L.geoJSON(data, {
+                style: function (feature) {
+                    const sdiCategory = getRobustProperty(feature.properties, ['SDI_Category', 'Jenis_keru', 'Jenis_ke_1', 'jenis_keru', 'Kondisi', 'kondisi'], 'Unknown');
+                    return {
+                        color: getConditionColor(sdiCategory),
+                        weight: 8, // Refined thickness
+                        opacity: 1,
+                        lineCap: 'round',
+                        lineJoin: 'round',
+                        interactive: true
+                    };
+                },
+                onEachFeature: function (feature, layer) {
+                    const props = feature.properties || {};
+                    const coords = feature.geometry.type === 'LineString' 
+                        ? feature.geometry.coordinates[Math.floor(feature.geometry.coordinates.length / 2)]
+                        : (feature.geometry.type === 'MultiLineString' ? feature.geometry.coordinates[0][Math.floor(feature.geometry.coordinates[0].length / 2)] : null);
+                    
+                    if (!coords) return;
 
-        // Main Condition Layer (Colored top)
-        L.geoJSON(data, {
-            style: function (feature) {
-                return {
-                    color: getConditionColor(feature.properties.Jenis_keru),
-                    weight: 8, // Refined thickness
-                    opacity: 1,
-                    lineCap: 'round',
-                    lineJoin: 'round',
-                    interactive: true
-                };
-            },
-            onEachFeature: function (feature, layer) {
-                // Pin logic: Use middle point of the sequence for better placement
-                const coords = feature.geometry.type === 'LineString' 
-                    ? feature.geometry.coordinates[Math.floor(feature.geometry.coordinates.length / 2)]
-                    : feature.geometry.coordinates[0][Math.floor(feature.geometry.coordinates[0].length / 2)];
-                
-                const latLng = [coords[1], coords[0]];
-                const color = getConditionColor(feature.properties.Jenis_keru);
-                const marker = L.marker(latLng, { 
-                    icon: createModernPin(color),
-                    interactive: true 
-                });
-                
-                const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${latLng[0]},${latLng[1]}`;
-                const popup = `
-                    <div style="font-family: 'Plus Jakarta Sans', sans-serif; min-width: 260px; padding: 5px;">
-                        <div style="font-weight: 800; color: #1e293b; margin-bottom: 5px; font-size: 1.15rem; line-height: 1.2;">${feature.properties.Name}</div>
-                        <div style="display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap;">
-                             <span style="background: ${color}15; color: ${color}; padding: 3px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; border: 1px solid ${color}30;">${feature.properties.Jenis_keru}</span>
-                             <span style="background: #f1f5f9; color: #64748b; padding: 3px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; border: 1px solid #e2e8f0;">Ruas #${feature.properties.No_Ruas}</span>
-                        </div>
-                        <div style="background: #f8fafc; border-radius: 12px; padding: 12px; border: 1px solid #e2e8f0; margin-bottom: 12px; display: flex; justify-content: space-around;">
-                            <div style="text-align: center;">
-                                <div style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px;">SDI INDEX</div>
-                                <div style="font-weight: 800; color: #334155; font-size: 1.1rem;">${feature.properties.SDI || feature.properties.Skor_kerus || 0}</div>
+                    const sdiValue = getRobustProperty(props, ['SDI', 'sdi_value', 'Skor_kerus', 'Skor_Kerus', 'skor_kerus', 'SKOR'], 0);
+                    const sdiCategory = getRobustProperty(props, ['SDI_Category', 'Jenis_keru', 'Jenis_ke_1', 'jenis_keru', 'Kondisi', 'kondisi'], 'Unknown');
+                    const pciValue = getRobustProperty(props, ['PCI', 'pci_value', 'PCI_Index'], 0);
+                    const noRuas = getRobustProperty(props, ['No_Ruas', 'NO_RUA', 'No_Ruas_J', 'Ruas_ID'], '-');
+                    const name = getRobustProperty(props, ['Name', 'Nama_Ruas', 'NAMRUA', 'Keterangan'], 'Tanpa Nama');
+
+                    const latLng = [coords[1], coords[0]];
+                    const color = getConditionColor(sdiCategory);
+                    const marker = L.marker(latLng, { 
+                        icon: createModernPin(color),
+                        interactive: true 
+                    });
+                    
+                    const popup = `
+                        <div style="font-family: 'Plus Jakarta Sans', sans-serif; min-width: 260px; padding: 5px;">
+                            <div style="font-weight: 800; color: #1e293b; margin-bottom: 5px; font-size: 1.15rem; line-height: 1.2;">${name}</div>
+                            <div style="display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap;">
+                                 <span style="background: ${color}15; color: ${color}; padding: 3px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; border: 1px solid ${color}30;">${sdiCategory}</span>
+                                 <span style="background: #f1f5f9; color: #64748b; padding: 3px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; border: 1px solid #e2e8f0;">Ruas #${noRuas}</span>
                             </div>
-                            <div style="width: 1px; background: #e2e8f0;"></div>
-                            <div style="text-align: center;">
-                                <div style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px;">PCI INDEX</div>
-                                <div style="font-weight: 800; color: #334155; font-size: 1.1rem;">${feature.properties.PCI || 0}</div>
+                            <div style="background: #f8fafc; border-radius: 12px; padding: 12px; border: 1px solid #e2e8f0; margin-bottom: 12px; display: flex; justify-content: space-around;">
+                                <div style="text-align: center;">
+                                    <div style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px;">SDI INDEX</div>
+                                    <div style="font-weight: 800; color: #334155; font-size: 1.1rem;">${sdiValue}</div>
+                                </div>
+                                <div style="width: 1px; background: #e2e8f0;"></div>
+                                <div style="text-align: center;">
+                                    <div style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px;">PCI INDEX</div>
+                                    <div style="font-weight: 800; color: #334155; font-size: 1.1rem;">${pciValue}</div>
+                                </div>
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 8px;">
+                                <a href="https://www.google.com/maps/dir/?api=1&destination=${latLng[0]},${latLng[1]}" target="_blank" style="text-decoration: none; width: 100%; background: #3b82f6; color: white; text-align: center; padding: 12px; border-radius: 10px; font-weight: 700; font-size: 0.9rem; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); display: flex; align-items: center; justify-content: center; gap: 8px;">
+                                    <i class="fas fa-directions"></i> Navigasi Maps
+                                </a>
                             </div>
                         </div>
-                        <div style="display: flex; flex-direction: column; gap: 8px;">
-                            <a href="https://www.google.com/maps/dir/?api=1&destination=${latLng[0]},${latLng[1]}" target="_blank" style="text-decoration: none; width: 100%; background: #3b82f6; color: white; text-align: center; padding: 12px; border-radius: 10px; font-weight: 700; font-size: 0.9rem; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); display: flex; align-items: center; justify-content: center; gap: 8px;">
-                                <i class="fas fa-directions"></i> Navigasi Maps
-                            </a>
-                        </div>
-                    </div>
-                `;
-                
-                const tooltipText = `${feature.properties.Jenis_keru.toUpperCase()} - Ruas #${feature.properties.No_Ruas}`;
-                layer.bindTooltip(tooltipText, { className: 'modern-tooltip', offset: [0, -10] });
-                marker.bindTooltip(tooltipText, { className: 'modern-tooltip' });
-                
-                layer.bindPopup(popup);
-                marker.bindPopup(popup);
-                
-                layers.roadConditions.addLayer(layer);
-                layers.roadConditions.addLayer(marker);
-            }
-        }).addTo(layers.roadConditions); // Ensure the group is updated
-        
-        clipGajahLayer = true; 
-    } catch (err) {
-        console.error("Error loading clip gajah data:", err);
+                    `;
+                    
+                    const tooltipText = `${sdiCategory.toUpperCase()} - Ruas #${noRuas}`;
+                    layer.bindTooltip(tooltipText, { className: 'modern-tooltip', offset: [0, -10] });
+                    marker.bindTooltip(tooltipText, { className: 'modern-tooltip' });
+                    
+                    layer.bindPopup(popup);
+                    marker.bindPopup(popup);
+                    
+                    layers.roadConditions.addLayer(layer);
+                    layers.roadConditions.addLayer(marker);
+                }
+            }).addTo(layers.roadConditions);
+
+        } catch (err) {
+            console.error(`Error loading GeoJSON from ${file}:`, err);
+        }
     }
 }
 

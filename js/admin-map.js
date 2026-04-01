@@ -143,84 +143,98 @@ function getRobustProperty(props, keys, defaultValue = null) {
 }
 
 async function loadClipGajahData() {
-    try {
-        const res = await fetch('/hasilclipgajah.geojson');
-        if (!res.ok) return;
-        const data = await res.json();
+    // Clear existing layers first to ensure we aren't showing old/conflicting data
+    layers.roadConditions.clearLayers();
+    
+    // List of files to attempt loading (supports multiple GIS exports)
+    const geojsonFiles = ['/hasilclipgajah.geojson', '/clipan.geojson'];
+    
+    for (const file of geojsonFiles) {
+        try {
+            const res = await fetch(file);
+            if (!res.ok) continue; 
+            
+            const data = await res.json();
+            console.log(`Successfully loaded road data from: ${file}`);
 
-        // High-Visibility Outline Layer (White background)
-        L.geoJSON(data, {
-            style: function () {
-                return {
-                    color: 'white',
-                    weight: 12, // Refined outline
-                    opacity: 1,
-                    lineCap: 'round',
-                    lineJoin: 'round',
-                    interactive: false
-                };
-            }
-        }).addTo(layers.roadConditions);
+            // 1. High-Visibility Outline Layer (White background)
+            L.geoJSON(data, {
+                style: function () {
+                    return {
+                        color: 'white',
+                        weight: 12, // Refined outline
+                        opacity: 1,
+                        lineCap: 'round',
+                        lineJoin: 'round',
+                        interactive: false
+                    };
+                }
+            }).addTo(layers.roadConditions);
 
-        // Main Condition Layer
-        L.geoJSON(data, {
-            style: function (feature) {
-                return {
-                    color: getConditionColor(feature.properties.Jenis_keru),
-                    weight: 8, // Refined thickness
-                    opacity: 1,
-                    lineCap: 'round',
-                    lineJoin: 'round',
-                    interactive: true
-                };
-            },
-            onEachFeature: function (feature, layer) {
-                const props = feature.properties || {};
-                const coords = feature.geometry.type === 'LineString' 
-                    ? feature.geometry.coordinates[Math.floor(feature.geometry.coordinates.length / 2)]
-                    : feature.geometry.coordinates[0][Math.floor(feature.geometry.coordinates[0].length / 2)];
-                
-                const sdiValue = getRobustProperty(props, ['SDI', 'sdi_value', 'Skor_kerus', 'skor_kerus', 'SKOR'], 0);
-                const sdiCategory = getRobustProperty(props, ['SDI_Category', 'Jenis_keru', 'jenis_keru', 'Kondisi', 'kondisi'], 'Unknown');
-                const pciValue = getRobustProperty(props, ['PCI', 'pci_value', 'PCI_Index'], 0);
-                const noRuas = getRobustProperty(props, ['No_Ruas', 'NO_RUA', 'No_Ruas_J', 'Ruas_ID'], '-');
-                const name = getRobustProperty(props, ['Name', 'Nama_Ruas', 'NAMRUA', 'Keterangan'], 'Tanpa Nama');
+            // 2. Main Condition Layer
+            L.geoJSON(data, {
+                style: function (feature) {
+                    const sdiCategory = getRobustProperty(feature.properties, ['SDI_Category', 'Jenis_keru', 'Jenis_ke_1', 'jenis_keru', 'Kondisi', 'kondisi'], 'Unknown');
+                    return {
+                        color: getConditionColor(sdiCategory),
+                        weight: 8, // Refined thickness
+                        opacity: 1,
+                        lineCap: 'round',
+                        lineJoin: 'round',
+                        interactive: true
+                    };
+                },
+                onEachFeature: function (feature, layer) {
+                    const props = feature.properties || {};
+                    // Use midpoint for better popup/marker placement
+                    const coords = feature.geometry.type === 'LineString' 
+                        ? feature.geometry.coordinates[Math.floor(feature.geometry.coordinates.length / 2)]
+                        : (feature.geometry.type === 'MultiLineString' ? feature.geometry.coordinates[0][Math.floor(feature.geometry.coordinates[0].length / 2)] : null);
+                    
+                    if (!coords) return;
 
-                const color = getConditionColor(sdiCategory);
-                const latLng = [coords[1], coords[0]];
+                    const sdiValue = getRobustProperty(props, ['SDI', 'sdi_value', 'Skor_kerus', 'Skor_Kerus', 'skor_kerus', 'SKOR'], 0);
+                    const sdiCategory = getRobustProperty(props, ['SDI_Category', 'Jenis_keru', 'Jenis_ke_1', 'jenis_keru', 'Kondisi', 'kondisi'], 'Unknown');
+                    const pciValue = getRobustProperty(props, ['PCI', 'pci_value', 'PCI_Index'], 0);
+                    const noRuas = getRobustProperty(props, ['No_Ruas', 'NO_RUA', 'No_Ruas_J', 'Ruas_ID'], '-');
+                    const name = getRobustProperty(props, ['Name', 'Nama_Ruas', 'NAMRUA', 'Keterangan'], 'Tanpa Nama');
 
-                const popup = `
-                    <div style="font-family: 'Plus Jakarta Sans', sans-serif; min-width: 260px; padding: 5px;">
-                        <div style="font-weight: 800; color: #1e293b; margin-bottom: 5px; font-size: 1.15rem; line-height: 1.2;">${name}</div>
-                        <div style="display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap;">
-                             <span style="background: ${color}15; color: ${color}; padding: 3px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; border: 1px solid ${color}30;">${sdiCategory}</span>
-                             <span style="background: #f1f5f9; color: #64748b; padding: 3px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; border: 1px solid #e2e8f0;">Ruas #${noRuas}</span>
-                        </div>
-                        <div style="background: #f8fafc; border-radius: 12px; padding: 12px; border: 1px solid #e2e8f0; margin-bottom: 12px; display: flex; justify-content: space-around;">
-                            <div style="text-align: center;">
-                                <div style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px;">SDI INDEX</div>
-                                <div style="font-weight: 800; color: #334155; font-size: 1.1rem;">${sdiValue}</div>
+                    const color = getConditionColor(sdiCategory);
+                    const latLng = [coords[1], coords[0]];
+
+                    const popup = `
+                        <div style="font-family: 'Plus Jakarta Sans', sans-serif; min-width: 260px; padding: 5px;">
+                            <div style="font-weight: 800; color: #1e293b; margin-bottom: 5px; font-size: 1.15rem; line-height: 1.2;">${name}</div>
+                            <div style="display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap;">
+                                 <span style="background: ${color}15; color: ${color}; padding: 3px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; border: 1px solid ${color}30;">${sdiCategory}</span>
+                                 <span style="background: #f1f5f9; color: #64748b; padding: 3px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; border: 1px solid #e2e8f0;">Ruas #${noRuas}</span>
                             </div>
-                            <div style="width: 1px; background: #e2e8f0;"></div>
-                            <div style="text-align: center;">
-                                <div style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px;">PCI INDEX</div>
-                                <div style="font-weight: 800; color: #334155; font-size: 1.1rem;">${pciValue}</div>
+                            <div style="background: #f8fafc; border-radius: 12px; padding: 12px; border: 1px solid #e2e8f0; margin-bottom: 12px; display: flex; justify-content: space-around;">
+                                <div style="text-align: center;">
+                                    <div style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px;">SDI INDEX</div>
+                                    <div style="font-weight: 800; color: #334155; font-size: 1.1rem;">${sdiValue}</div>
+                                </div>
+                                <div style="width: 1px; background: #e2e8f0;"></div>
+                                <div style="text-align: center;">
+                                    <div style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px;">PCI INDEX</div>
+                                    <div style="font-weight: 800; color: #334155; font-size: 1.1rem;">${pciValue}</div>
+                                </div>
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 8px;">
+                                <a href="https://www.google.com/maps/dir/?api=1&destination=${latLng[0]},${latLng[1]}" target="_blank" style="text-decoration: none; width: 100%; background: #3b82f6; color: white; text-align: center; padding: 12px; border-radius: 10px; font-weight: 700; font-size: 0.9rem; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); display: flex; align-items: center; justify-content: center; gap: 8px;">
+                                    <i class="fas fa-directions"></i> Navigasi Maps
+                                </a>
                             </div>
                         </div>
-                        <div style="display: flex; flex-direction: column; gap: 8px;">
-                            <a href="https://www.google.com/maps/dir/?api=1&destination=${latLng[0]},${latLng[1]}" target="_blank" style="text-decoration: none; width: 100%; background: #3b82f6; color: white; text-align: center; padding: 12px; border-radius: 10px; font-weight: 700; font-size: 0.9rem; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); display: flex; align-items: center; justify-content: center; gap: 8px;">
-                                <i class="fas fa-directions"></i> Navigasi Maps
-                            </a>
-                        </div>
-                    </div>
-                `;
-                layer.bindPopup(popup);
-                
-                layer.bindTooltip(`RUAS: ${noRuas}`, { sticky: true });
-            }
-        }).addTo(layers.roadConditions);
-    } catch (err) {
-        console.error("Error loading clip gajah data in admin map:", err);
+                    `;
+                    layer.bindPopup(popup);
+                    layer.bindTooltip(`RUAS: ${noRuas}`, { sticky: true });
+                }
+            }).addTo(layers.roadConditions);
+
+        } catch (err) {
+            console.error(`Error loading GeoJSON from ${file}:`, err);
+        }
     }
 }
 

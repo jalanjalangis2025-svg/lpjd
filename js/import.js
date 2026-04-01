@@ -119,8 +119,8 @@ function mapFeatureToRecord(feature, districtBoundaries) {
     const noRuas = getRobustProperty(props, ['No_Ruas', 'NO_RUA', 'No_Ruas_J', 'Ruas_ID'], '-');
     const length = parseFloat(getRobustProperty(props, ['SHAPE_Leng', 'Panjang', 'Lenth', 'Length', 'Shape_Length'], 0)) || 0;
     
-    const sdiValue = parseFloat(getRobustProperty(props, ['SDI', 'sdi_value', 'Skor_kerus', 'skor_kerus', 'SKOR'], 0)) || 0;
-    const sdiCategory = getRobustProperty(props, ['SDI_Category', 'Jenis_keru', 'jenis_keru', 'Kondisi', 'kondisi'], 'Unknown');
+    const sdiValue = parseFloat(getRobustProperty(props, ['SDI', 'sdi_value', 'Skor_kerus', 'Skor_Kerus', 'skor_kerus', 'SKOR'], 0)) || 0;
+    const sdiCategory = getRobustProperty(props, ['SDI_Category', 'Jenis_keru', 'Jenis_ke_1', 'jenis_keru', 'Kondisi', 'kondisi'], 'Unknown');
     
     const pciValue = parseFloat(getRobustProperty(props, ['PCI', 'pci_value', 'PCI_Index'], null));
     const pciCategory = getRobustProperty(props, ['PCI_Category', 'pci_cat'], null);
