@@ -870,6 +870,7 @@
                         <th style="width: 50px;">No.</th>
                         <th>Tanggal</th>
                         <th>Kecamatan</th>
+                        <th>Keterangan</th>
                         <th>Dimensi (PxL)</th>
                         <th>Nilai SDI</th>
                         <th>Nilai PCI</th>
@@ -955,8 +956,11 @@
 
 
                 if (type === 'admin') {
-                    const sdi = item.sdi_value ? `<span class="badge badge-sdi">${item.sdi_value} (${item.sdi_category || '-'})</span>` : '-';
-                    const pci = item.pci_value ? `<span class="badge badge-pci">${item.pci_value} (${item.pci_category || '-'})</span>` : '-';
+                    const sdiVal = (item.sdi_value !== null && item.sdi_value !== undefined) ? item.sdi_value : 0;
+                    const pciVal = (item.pci_value !== null && item.pci_value !== undefined) ? item.pci_value : 0;
+                    
+                    const sdi = `<span class="badge badge-sdi">${sdiVal} (${item.sdi_category || '-'})</span>`;
+                    const pci = `<span class="badge badge-pci">${pciVal} (${item.pci_category || '-'})</span>`;
                     const dims = (item.damage_length && item.damage_width) ? `${item.damage_length}m x ${item.damage_width}m` : '-';
 
                     row = `
@@ -964,6 +968,11 @@
                             <td style="color: #64748b; font-weight: 600;">${rowNumber}</td>
                             <td style="font-weight: 500;">${date}</td>
                             <td>${item.district}</td>
+                            <td style="max-width: 200px;">
+                                <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 0.9rem; color: #64748b;" title="${item.description || '-'}">
+                                    ${item.description || '-'}
+                                </div>
+                            </td>
                             <td>${dims}</td>
                             <td>${sdi}</td>
                             <td>${pci}</td>
@@ -1072,8 +1081,8 @@
                     "Pelapor": item.reporter_name || '-',
                     "Kecamatan": item.district || '-',
                     "Deskripsi/Keterangan": item.description || '-',
-                    "Nilai SDI": item.sdi_value || '-',
-                    "Nilai PCI": item.pci_value || '-',
+                    "Nilai SDI": (item.sdi_value !== null && item.sdi_value !== undefined) ? item.sdi_value : 0,
+                    "Nilai PCI": (item.pci_value !== null && item.pci_value !== undefined) ? item.pci_value : 0,
                     "Status": item.status
                 };
             });

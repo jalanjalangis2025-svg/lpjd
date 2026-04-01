@@ -117,26 +117,41 @@ async function drawDemakBoundary() {
     }
 }
 
-function getStatusColor(status) {
-    if (status === 'verified') return '#10b981';
-    if (status === 'rejected') return '#ef4444';
-    return '#f59e0b';
+function createModernPin(color) {
+    return L.divIcon({
+        className: 'modern-pin',
+        html: `
+            <svg class="pin-svg" viewBox="0 0 384 512" xmlns="http://www.w3.org/2000/svg">
+                <path fill="${color}" d="M172.268 501.67C26.97 291.031 0 269.413 0 192 0 85.961 85.961 0 192 0s192 85.961 192 192c0 77.413-26.97 99.031-172.268 309.67-9.535 13.774-29.93 13.773-39.464 0z"></path>
+                <circle class="pin-dot" cx="192" cy="192" r="64"></circle>
+            </svg>
+        `,
+        iconSize: [30, 40],
+        iconAnchor: [15, 40],
+        popupAnchor: [0, -40],
+        tooltipAnchor: [15, -20]
+    });
 }
 
-function createMarkerIcon(status) {
-    const color = getStatusColor(status);
-    return L.divIcon({
-        className: 'custom-pin',
-        html: `<div style="
-            background-color: ${color};
-            width: 16px; 
-            height: 16px; 
-            border-radius: 50%; 
-            border: 2px solid white; 
-            box-shadow: 0 0 10px ${color};"></div>`,
-        iconSize: [20, 20],
-        iconAnchor: [10, 10]
-    });
+function getMarkerColor(report) {
+    // Prioritize SDI/PCI category for color
+    const category = (report.sdi_category || report.pci_category || '').toLowerCase();
+    
+    if (category.includes('baik') || category.includes('bagus')) return '#22c55e'; // Hijau
+    if (category.includes('sedang')) return '#eab308'; // Kuning
+    if (category.includes('ringan')) return '#f97316'; // Orange
+    if (category.includes('berat') || category.includes('rusak')) return '#ef4444'; // Merah
+    
+    // Fallback to status color if category is empty
+    if (report.status === 'verified') return '#22c55e';
+    if (report.status === 'rejected') return '#ef4444';
+    return '#f59e0b'; // Default Yellow for pending without category
+}
+
+function getStatusColor(status) {
+    if (status === 'verified') return '#22c55e'; // Green
+    if (status === 'rejected') return '#ef4444'; // Red
+    return '#eab308'; // Yellow
 }
 
 function renderAdminMap(reports) {
@@ -147,45 +162,50 @@ function renderAdminMap(reports) {
 
     reports.forEach(report => {
         const { latitude, longitude, status, id, district, reporter_name } = report;
-        const color = getStatusColor(status);
-
-        // Canvas-based CircleMarker for 10k+ data points performance
-        const marker = L.circleMarker([latitude, longitude], {
-            radius: 6,
-            fillColor: color,
-            color: 'white',
-            weight: 2,
-            opacity: 1,
-            fillOpacity: 1
+        const color = getMarkerColor(report);
+        const marker = L.marker([latitude, longitude], {
+            icon: createModernPin(color)
         });
 
-        // Status indicator in popup
         let statusLabel = status === 'verified' ? 'Verified' : (status === 'rejected' ? 'Rejected' : 'Pending');
 
         const popupContent = `
-            <div style="font-family: 'Plus Jakarta Sans', sans-serif; min-width: 200px;">
-                <div style="font-weight: 700; margin-bottom: 4px; font-size: 1.1rem;">${district || 'Lokasi'}</div>
-                <div style="font-size: 0.9em; color: #64748b; margin-bottom: 12px;">
-                    <i class="fas fa-user-edit"></i> Pelapor: ${reporter_name || 'Admin'} <br>
-                    <span style="
-                        display: inline-block; 
-                        margin-top: 6px; 
-                        background: ${color}20; 
-                        color: ${color}; 
-                        padding: 2px 8px; 
-                        border-radius: 4px; 
-                        font-weight: 700;
-                        font-size: 0.8rem;
-                        border: 1px solid ${color}40;
-                    ">${statusLabel}</span>
+            <div style="font-family: 'Plus Jakarta Sans', sans-serif; min-width: 240px; padding: 5px;">
+                <div style="font-weight: 800; margin-bottom: 4px; font-size: 1.15rem; color: #1e293b;">${district || 'Lokasi'}</div>
+                <div style="font-size: 0.85rem; color: #64748b; margin-bottom: 12px; display: flex; align-items: center; gap: 5px;">
+                    <i class="fas fa-user-edit"></i> Pelapor: ${reporter_name || 'Admin'}
                 </div>
-                <button onclick="openActionModal(${id})" 
-                    style="width: 100%; background: #3b82f6; color: white; border: none; padding: 8px; border-radius: 8px; cursor: pointer; font-weight: 700; transition: all 0.2s;">
-                    <i class="fas fa-cog"></i> Kelola Laporan
-                </button>
+
+                <div style="background: #f8fafc; border-radius: 10px; padding: 12px; border: 1px solid #e2e8f0; margin-bottom: 12px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div>
+                            <div style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px;">PCI Index</div>
+                            <div style="font-weight: 800; color: #334155; font-size: 1.1rem;">${(report.pci_value !== null && report.pci_value !== undefined) ? report.pci_value : 0}</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px;">SDI Index</div>
+                            <div style="font-weight: 800; color: #334155; font-size: 1.1rem;">${(report.sdi_value !== null && report.sdi_value !== undefined) ? report.sdi_value : 0}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <button onclick="openActionModal(${id})" 
+                        style="width: 100%; background: #3b82f6; color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: 700; transition: all 0.2s; box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);">
+                        <i class="fas fa-cog"></i> Kelola Laporan
+                    </button>
+                    
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 5px;">
+                         <span style="background: ${color}15; color: ${color}; padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 800; border: 1px solid ${color}30;">
+                            ${statusLabel}
+                        </span>
+                        <span style="font-size: 0.75rem; color: #94a3b8; font-weight: 600;">ID #${id}</span>
+                    </div>
+                </div>
             </div>
         `;
 
+        marker.bindTooltip(`ADMIN VIEW: ${district}`, { className: 'modern-tooltip' });
         marker.bindPopup(popupContent);
         layers.markers.addLayer(marker);
     });

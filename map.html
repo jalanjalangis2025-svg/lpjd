@@ -37,11 +37,18 @@
             <div class="select-wrapper">
                 <i class="fas fa-filter"></i>
                 <select id="statusFilter" onchange="applyFilters()">
-                    <option value="all">Semua Status</option>
+                    <option value="all">Semua Status (Pin)</option>
                     <option value="verified">Terverifikasi</option>
                     <option value="pending">Menunggu</option>
                     <option value="rejected">Ditolak</option>
                 </select>
+            </div>
+
+            <div class="select-wrapper" style="margin-left: 10px;">
+                <label style="font-size: 0.85rem; color: #64748b; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="conditionToggle" onchange="toggleConditionLayer()"> 
+                    Kondisi Jalan
+                </label>
             </div>
         </div>
 
@@ -55,19 +62,42 @@
 
     <!-- Floating Legend -->
     <div class="legend-card">
-        <h3>Legenda Status</h3>
-        <div class="legend-item">
-            <span class="dot verified"></span>
-            <span>Terverifikasi</span>
+        <div id="statusLegend">
+            <h3>Legenda Status Laporan</h3>
+            <div class="legend-item">
+                <span class="dot verified"></span>
+                <span>Terverifikasi</span>
+            </div>
+            <div class="legend-item">
+                <span class="dot pending"></span>
+                <span>Menunggu</span>
+            </div>
+            <div class="legend-item">
+                <span class="dot rejected"></span>
+                <span>Ditolak</span>
+            </div>
         </div>
-        <div class="legend-item">
-            <span class="dot pending"></span>
-            <span>Menunggu</span>
+
+        <div id="conditionLegend" style="display: none;">
+            <h3 class="legend-section-title">Kondisi Jalan</h3>
+            <div class="legend-item">
+                <span class="line-legend bagus"></span>
+                <span>Baik</span>
+            </div>
+            <div class="legend-item">
+                <span class="line-legend sedang"></span>
+                <span>Sedang</span>
+            </div>
+            <div class="legend-item">
+                <span class="line-legend ringan"></span>
+                <span>Rusak Ringan</span>
+            </div>
+            <div class="legend-item">
+                <span class="line-legend berat"></span>
+                <span>Rusak Berat</span>
+            </div>
         </div>
-        <div class="legend-item">
-            <span class="dot rejected"></span>
-            <span>Ditolak</span>
-        </div>
+
         <hr style="margin: 8px 0; border: 0; border-top: 1px solid #eee;">
         <div class="legend-item">
             <span class="dot demak-area"></span>

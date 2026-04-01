@@ -109,11 +109,17 @@ function mapFeatureToRecord(feature, districtBoundaries) {
         district: districtName,
         latitude: lat,
         longitude: lng,
-        description: `Import Ruas Jalan: ${props.REMARK || 'Tanpa Nama'} (LCODE: ${props.LCODE || '-'})`,
-        damage_length: parseFloat(props.SHAPE_Leng) || 0,
+        description: `Import Ruas Jalan: ${props.REMARK || props.Name || 'Tanpa Nama'} (LCODE: ${props.LCODE || '-'})`,
+        damage_length: parseFloat(props.SHAPE_Leng || props.Panjang || props.Lenth) || 0,
         damage_width: 0,
         report_date: new Date().toISOString().split('T')[0],
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
+        
+        // Mapping SDI/PCI/Damage Score
+        sdi_value: parseFloat(props.SDI || props.Skor_kerus) || 0,
+        sdi_category: props.SDI_Category || props.Jenis_keru || 'Unknown',
+        pci_value: parseFloat(props.PCI) || null,
+        pci_category: props.PCI_Category || null
     };
 }
 

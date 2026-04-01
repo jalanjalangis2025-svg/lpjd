@@ -76,9 +76,9 @@ async function loadReportData(id) {
     if(document.getElementById('report_date')) document.getElementById('report_date').value = data.report_date || new Date().toISOString().split('T')[0];
     if(document.getElementById('damage_length')) document.getElementById('damage_length').value = data.damage_length || '';
     if(document.getElementById('damage_width')) document.getElementById('damage_width').value = data.damage_width || '';
-    if(document.getElementById('sdi_value')) document.getElementById('sdi_value').value = data.sdi_value || '';
+    if(document.getElementById('sdi_value')) document.getElementById('sdi_value').value = (data.sdi_value !== null && data.sdi_value !== undefined) ? data.sdi_value : 0;
     if(document.getElementById('sdi_category')) document.getElementById('sdi_category').value = data.sdi_category || '';
-    if(document.getElementById('pci_value')) document.getElementById('pci_value').value = data.pci_value || '';
+    if(document.getElementById('pci_value')) document.getElementById('pci_value').value = (data.pci_value !== null && data.pci_value !== undefined) ? data.pci_value : 0;
     if(document.getElementById('pci_category')) document.getElementById('pci_category').value = data.pci_category || '';
 }
 

@@ -12,6 +12,13 @@ body {
     height: 100vh;
     width: 100vw;
     z-index: 0;
+    transition: all 0.3s ease;
+}
+
+#map.paper-mode {
+    background-color: #ffffff !important;
+    border: 15px double #1e293b; /* Double-line GIS Frame */
+    box-shadow: inset 0 0 100px rgba(0,0,0,0.05);
 }
 
 /* Floating Controls Container */
@@ -122,13 +129,20 @@ body {
     position: absolute;
     bottom: 30px;
     right: 20px;
-    /* Right aligned */
     background: white;
     padding: 20px;
     border-radius: 16px;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
     z-index: 1000;
     min-width: 180px;
+}
+
+/* GIS Style Legend */
+#map.paper-mode ~ .legend-card {
+    border: 2px solid #1e293b;
+    border-radius: 0;
+    box-shadow: none;
+    font-family: 'Courier New', Courier, monospace; /* Technical font */
 }
 
 .legend-card h3 {
@@ -178,6 +192,116 @@ body {
     border: 2px solid #0056b3;
     border-radius: 4px;
 }
+
+/* Modern Pin Marker (SVG Style) */
+.modern-pin {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.25));
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    cursor: pointer;
+}
+
+.modern-pin:hover {
+    transform: scale(1.2) translateY(-5px);
+    filter: drop-shadow(0 8px 12px rgba(0,0,0,0.3));
+    z-index: 1000 !important;
+}
+
+.pin-svg {
+    width: 100%;
+    height: 100%;
+}
+
+.pin-dot {
+    fill: white;
+    stroke: rgba(0,0,0,0.1);
+    stroke-width: 0.5px;
+}
+
+/* Hover Tooltip */
+.modern-tooltip {
+    background: rgba(30, 41, 59, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 700;
+    font-size: 0.85rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.modern-tooltip::before {
+    border-right-color: rgba(30, 41, 59, 0.95) !important;
+}
+
+/* Navigation Button in Popup */
+.btn-nav-google {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 10px;
+    background: #4285F4; /* Google Blue */
+    color: white !important;
+    text-decoration: none !important;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 0.85rem;
+    margin-top: 15px;
+    transition: all 0.2s ease;
+    border: none;
+    box-shadow: 0 4px 10px rgba(66, 133, 244, 0.3);
+}
+
+.btn-nav-google:hover {
+    background: #3367D6;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(66, 133, 244, 0.4);
+}
+
+.btn-nav-google i {
+    font-size: 1rem;
+}
+
+.road-label {
+    background: rgba(255, 255, 255, 0.9);
+    color: #1e293b;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    border: 1px solid #94a3b8;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-top: -30px; /* Position above the pin */
+    white-space: nowrap;
+    z-index: 1000;
+}
+
+.legend-section-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    margin: 12px 0 8px 0;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.line-legend {
+    width: 20px;
+    height: 4px;
+    border-radius: 2px;
+    display: inline-block;
+}
+
+.line-legend.bagus { background: #22c55e; }
+.line-legend.sedang { background: #eab308; }
+.line-legend.ringan { background: #f97316; }
+.line-legend.berat { background: #ef4444; }
 
 /* Mobile Responsive */
 @media (max-width: 768px) {
@@ -264,6 +388,7 @@ body {
     gap: 1.5rem;
     background: linear-gradient(to right, #fff, #94a3b8);
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
     letter-spacing: -1px;
 }
@@ -271,6 +396,7 @@ body {
 .header h1 i {
     background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
     font-size: 2.5rem;
     filter: drop-shadow(0 0 20px rgba(59, 130, 246, 0.5));
