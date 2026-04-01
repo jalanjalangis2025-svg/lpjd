@@ -68,6 +68,17 @@ async function getDistrictBoundaries() {
     return await res.json();
 }
 
+function getRobustProperty(props, keys, defaultValue = null) {
+    if (!props) return defaultValue;
+    const lowerKeys = keys.map(k => k.toLowerCase());
+    for (const key in props) {
+        if (lowerKeys.includes(key.toLowerCase())) {
+            return props[key];
+        }
+    }
+    return defaultValue;
+}
+
 function mapFeatureToRecord(feature, districtBoundaries) {
     const props = feature.properties || {};
     
@@ -103,23 +114,34 @@ function mapFeatureToRecord(feature, districtBoundaries) {
         }
     }
 
+    // Advanced Mapping for inconsistent property names
+    const name = getRobustProperty(props, ['Name', 'Nama_Ruas', 'NAMRUA', 'Keterangan'], 'Tanpa Nama');
+    const noRuas = getRobustProperty(props, ['No_Ruas', 'NO_RUA', 'No_Ruas_J', 'Ruas_ID'], '-');
+    const length = parseFloat(getRobustProperty(props, ['SHAPE_Leng', 'Panjang', 'Lenth', 'Length', 'Shape_Length'], 0)) || 0;
+    
+    const sdiValue = parseFloat(getRobustProperty(props, ['SDI', 'sdi_value', 'Skor_kerus', 'skor_kerus', 'SKOR'], 0)) || 0;
+    const sdiCategory = getRobustProperty(props, ['SDI_Category', 'Jenis_keru', 'jenis_keru', 'Kondisi', 'kondisi'], 'Unknown');
+    
+    const pciValue = parseFloat(getRobustProperty(props, ['PCI', 'pci_value', 'PCI_Index'], null));
+    const pciCategory = getRobustProperty(props, ['PCI_Category', 'pci_cat'], null);
+
     return {
         report_source: 'admin',
         status: 'verified',
         district: districtName,
         latitude: lat,
         longitude: lng,
-        description: `${props.Name || 'Tanpa Nama'} (Ruas #${props.No_Ruas || '-'})`,
-        damage_length: parseFloat(props.SHAPE_Leng || props.Panjang || props.Lenth) || 0,
+        description: `${name} (Ruas #${noRuas})`,
+        damage_length: length,
         damage_width: 0,
         report_date: new Date().toISOString().split('T')[0],
         created_at: new Date().toISOString(),
         
         // Mapping SDI/PCI/Damage Score
-        sdi_value: parseFloat(props.SDI || props.Skor_kerus) || 0,
-        sdi_category: props.SDI_Category || props.Jenis_keru || 'Unknown',
-        pci_value: parseFloat(props.PCI) || null,
-        pci_category: props.PCI_Category || null
+        sdi_value: sdiValue,
+        sdi_category: sdiCategory,
+        pci_value: pciValue,
+        pci_category: pciCategory
     };
 }
 

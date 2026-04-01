@@ -131,6 +131,17 @@ function getConditionColor(condition) {
     return '#94a3b8'; // Grey default
 }
 
+function getRobustProperty(props, keys, defaultValue = null) {
+    if (!props) return defaultValue;
+    const lowerKeys = keys.map(k => k.toLowerCase());
+    for (const key in props) {
+        if (lowerKeys.includes(key.toLowerCase())) {
+            return props[key];
+        }
+    }
+    return defaultValue;
+}
+
 async function loadClipGajahData() {
     try {
         const res = await fetch('/hasilclipgajah.geojson');
@@ -164,29 +175,36 @@ async function loadClipGajahData() {
                 };
             },
             onEachFeature: function (feature, layer) {
+                const props = feature.properties || {};
                 const coords = feature.geometry.type === 'LineString' 
                     ? feature.geometry.coordinates[Math.floor(feature.geometry.coordinates.length / 2)]
                     : feature.geometry.coordinates[0][Math.floor(feature.geometry.coordinates[0].length / 2)];
                 
-                const color = getConditionColor(feature.properties.Jenis_keru);
+                const sdiValue = getRobustProperty(props, ['SDI', 'sdi_value', 'Skor_kerus', 'skor_kerus', 'SKOR'], 0);
+                const sdiCategory = getRobustProperty(props, ['SDI_Category', 'Jenis_keru', 'jenis_keru', 'Kondisi', 'kondisi'], 'Unknown');
+                const pciValue = getRobustProperty(props, ['PCI', 'pci_value', 'PCI_Index'], 0);
+                const noRuas = getRobustProperty(props, ['No_Ruas', 'NO_RUA', 'No_Ruas_J', 'Ruas_ID'], '-');
+                const name = getRobustProperty(props, ['Name', 'Nama_Ruas', 'NAMRUA', 'Keterangan'], 'Tanpa Nama');
+
+                const color = getConditionColor(sdiCategory);
                 const latLng = [coords[1], coords[0]];
 
                 const popup = `
                     <div style="font-family: 'Plus Jakarta Sans', sans-serif; min-width: 260px; padding: 5px;">
-                        <div style="font-weight: 800; color: #1e293b; margin-bottom: 5px; font-size: 1.15rem; line-height: 1.2;">${feature.properties.Name}</div>
+                        <div style="font-weight: 800; color: #1e293b; margin-bottom: 5px; font-size: 1.15rem; line-height: 1.2;">${name}</div>
                         <div style="display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap;">
-                             <span style="background: ${color}15; color: ${color}; padding: 3px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; border: 1px solid ${color}30;">${feature.properties.Jenis_keru}</span>
-                             <span style="background: #f1f5f9; color: #64748b; padding: 3px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; border: 1px solid #e2e8f0;">Ruas #${feature.properties.No_Ruas}</span>
+                             <span style="background: ${color}15; color: ${color}; padding: 3px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; border: 1px solid ${color}30;">${sdiCategory}</span>
+                             <span style="background: #f1f5f9; color: #64748b; padding: 3px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; border: 1px solid #e2e8f0;">Ruas #${noRuas}</span>
                         </div>
                         <div style="background: #f8fafc; border-radius: 12px; padding: 12px; border: 1px solid #e2e8f0; margin-bottom: 12px; display: flex; justify-content: space-around;">
                             <div style="text-align: center;">
                                 <div style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px;">SDI INDEX</div>
-                                <div style="font-weight: 800; color: #334155; font-size: 1.1rem;">${feature.properties.SDI || feature.properties.Skor_kerus || 0}</div>
+                                <div style="font-weight: 800; color: #334155; font-size: 1.1rem;">${sdiValue}</div>
                             </div>
                             <div style="width: 1px; background: #e2e8f0;"></div>
                             <div style="text-align: center;">
                                 <div style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px;">PCI INDEX</div>
-                                <div style="font-weight: 800; color: #334155; font-size: 1.1rem;">${feature.properties.PCI || 0}</div>
+                                <div style="font-weight: 800; color: #334155; font-size: 1.1rem;">${pciValue}</div>
                             </div>
                         </div>
                         <div style="display: flex; flex-direction: column; gap: 8px;">
@@ -198,7 +216,7 @@ async function loadClipGajahData() {
                 `;
                 layer.bindPopup(popup);
                 
-                layer.bindTooltip(`RUAS: ${feature.properties.No_Ruas}`, { sticky: true });
+                layer.bindTooltip(`RUAS: ${noRuas}`, { sticky: true });
             }
         }).addTo(layers.roadConditions);
     } catch (err) {
