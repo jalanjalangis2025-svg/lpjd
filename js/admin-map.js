@@ -6,7 +6,8 @@ const layers = {
     markers: L.layerGroup(),
     boundary: L.layerGroup(),
     roads: L.layerGroup(),
-    labels: L.layerGroup()
+    labels: L.layerGroup(),
+    roadConditions: L.layerGroup()
 };
 
 const districtColors = {
@@ -40,8 +41,12 @@ function initAdminMap() {
     // Add layers to map
     layers.boundary.addTo(adminMap);
     layers.roads.addTo(adminMap);
+    layers.roadConditions.addTo(adminMap);
     layers.markers.addTo(adminMap);
     layers.labels.addTo(adminMap);
+
+    // Load data
+    loadClipGajahData();
 
     // Initial boundary draw
     drawDemakBoundary();
@@ -117,19 +122,111 @@ async function drawDemakBoundary() {
     }
 }
 
+function getConditionColor(condition) {
+    const c = (condition || '').toLowerCase();
+    if (c.includes('bagus') || c.includes('baik')) return '#22c55e'; // Green
+    if (c.includes('sedang')) return '#eab308'; // Yellow
+    if (c.includes('ringan')) return '#f97316'; // Orange
+    if (c.includes('berat') || c.includes('rusak')) return '#ef4444'; // Red
+    return '#94a3b8'; // Grey default
+}
+
+async function loadClipGajahData() {
+    try {
+        const res = await fetch('/hasilclipgajah.geojson');
+        if (!res.ok) return;
+        const data = await res.json();
+
+        // High-Visibility Outline Layer (White background)
+        L.geoJSON(data, {
+            style: function () {
+                return {
+                    color: 'white',
+                    weight: 12, // Refined outline
+                    opacity: 1,
+                    lineCap: 'round',
+                    lineJoin: 'round',
+                    interactive: false
+                };
+            }
+        }).addTo(layers.roadConditions);
+
+        // Main Condition Layer
+        L.geoJSON(data, {
+            style: function (feature) {
+                return {
+                    color: getConditionColor(feature.properties.Jenis_keru),
+                    weight: 8, // Refined thickness
+                    opacity: 1,
+                    lineCap: 'round',
+                    lineJoin: 'round',
+                    interactive: true
+                };
+            },
+            onEachFeature: function (feature, layer) {
+                const coords = feature.geometry.type === 'LineString' 
+                    ? feature.geometry.coordinates[Math.floor(feature.geometry.coordinates.length / 2)]
+                    : feature.geometry.coordinates[0][Math.floor(feature.geometry.coordinates[0].length / 2)];
+                
+                const latLng = [coords[1], coords[0]];
+                const color = getConditionColor(feature.properties.Jenis_keru);
+                
+                // Add marker for the segment
+                const marker = L.marker(latLng, { 
+                    icon: createModernPin(color),
+                    interactive: true 
+                });
+
+                const popup = `
+                    <div style="font-family: 'Plus Jakarta Sans', sans-serif; min-width: 200px;">
+                        <div style="font-weight: 800; color: #1e293b; margin-bottom: 5px; font-size: 1rem;">${feature.properties.Name}</div>
+                        <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+                             <span style="background: ${color}15; color: ${color}; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 700;">${feature.properties.Jenis_keru}</span>
+                             <span style="background: #f1f5f9; color: #64748b; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 700;">Ruas #${feature.properties.No_Ruas}</span>
+                        </div>
+                        <div style="font-size: 0.85rem; color: #475569;">
+                            SDI: <strong>${feature.properties.SDI || feature.properties.Skor_kerus || 0}</strong> | 
+                            PCI: <strong>${feature.properties.PCI || 0}</strong>
+                        </div>
+                    </div>
+                `;
+                layer.bindPopup(popup);
+                marker.bindPopup(popup);
+                
+                layer.bindTooltip(`RUAS: ${feature.properties.No_Ruas}`, { sticky: true });
+                marker.bindTooltip(`RUAS: ${feature.properties.No_Ruas}`, { className: 'modern-tooltip' });
+                
+                layers.roadConditions.addLayer(marker);
+            }
+        }).addTo(layers.roadConditions);
+    } catch (err) {
+        console.error("Error loading clip gajah data in admin map:", err);
+    }
+}
+
 function createModernPin(color) {
     return L.divIcon({
-        className: 'modern-pin',
+        className: 'pushpin-marker',
         html: `
-            <svg class="pin-svg" viewBox="0 0 384 512" xmlns="http://www.w3.org/2000/svg">
-                <path fill="${color}" d="M172.268 501.67C26.97 291.031 0 269.413 0 192 0 85.961 85.961 0 192 0s192 85.961 192 192c0 77.413-26.97 99.031-172.268 309.67-9.535 13.774-29.93 13.773-39.464 0z"></path>
-                <circle class="pin-dot" cx="192" cy="192" r="64"></circle>
+            <svg viewBox="0 0 100 100" class="pushpin-svg" xmlns="http://www.w3.org/2000/svg">
+                <path d="M50 95 L50 65" stroke="#cbd5e1" stroke-width="4" stroke-linecap="round" />
+                <path d="M50 95 L50 65" stroke="#64748b" stroke-width="1.5" stroke-linecap="round" transform="translate(1,0)" />
+                <g transform="rotate(-20 50 65)">
+                    <ellipse cx="50" cy="58" rx="20" ry="10" fill="${color}" />
+                    <ellipse cx="50" cy="56" rx="20" ry="10" fill="${color}" style="filter: brightness(1.2);" />
+                    <rect x="36" y="30" width="28" height="26" fill="${color}" />
+                    <rect x="36" y="30" width="6" height="26" fill="rgba(255,255,255,0.3)" /> 
+                    <rect x="58" y="30" width="6" height="26" fill="rgba(0,0,0,0.15)" /> 
+                    <ellipse cx="50" cy="30" rx="24" ry="12" fill="${color}" style="filter: brightness(0.85);" />
+                    <ellipse cx="50" cy="25" rx="24" ry="12" fill="${color}" />
+                    <ellipse cx="40" cy="22" rx="10" ry="4" fill="rgba(255,255,255,0.45)" />
+                </g>
             </svg>
         `,
-        iconSize: [30, 40],
-        iconAnchor: [15, 40],
+        iconSize: [45, 45],
+        iconAnchor: [22, 45],
         popupAnchor: [0, -40],
-        tooltipAnchor: [15, -20]
+        tooltipAnchor: [20, -20]
     });
 }
 

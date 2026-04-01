@@ -109,7 +109,7 @@ function mapFeatureToRecord(feature, districtBoundaries) {
         district: districtName,
         latitude: lat,
         longitude: lng,
-        description: `Import Ruas Jalan: ${props.REMARK || props.Name || 'Tanpa Nama'} (LCODE: ${props.LCODE || '-'})`,
+        description: `${props.Name || 'Tanpa Nama'} (Ruas #${props.No_Ruas || '-'})`,
         damage_length: parseFloat(props.SHAPE_Leng || props.Panjang || props.Lenth) || 0,
         damage_width: 0,
         report_date: new Date().toISOString().split('T')[0],

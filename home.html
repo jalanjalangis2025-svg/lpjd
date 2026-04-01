@@ -869,6 +869,7 @@
                     <tr>
                         <th style="width: 50px;">No.</th>
                         <th>Tanggal</th>
+                        <th style="width: 100px;">No. Ruas</th>
                         <th>Kecamatan</th>
                         <th>Keterangan</th>
                         <th>Dimensi (PxL)</th>
@@ -963,10 +964,19 @@
                     const pci = `<span class="badge badge-pci">${pciVal} (${item.pci_category || '-'})</span>`;
                     const dims = (item.damage_length && item.damage_width) ? `${item.damage_length}m x ${item.damage_width}m` : '-';
 
+                    // Extract No. Ruas from description if it exists (for imported data)
+                    let noRuas = '-';
+                    if (item.description && item.description.includes('Ruas #')) {
+                        noRuas = item.description.split('Ruas #')[1].split(' ')[0] || '-';
+                    } else if (item.description && item.description.includes('LCODE:')) {
+                        noRuas = item.description.split('LCODE:')[1].split(')')[0].trim() || '-';
+                    }
+
                     row = `
                         <tr>
                             <td style="color: #64748b; font-weight: 600;">${rowNumber}</td>
                             <td style="font-weight: 500;">${date}</td>
+                            <td style="font-weight: 700; color: #3b82f6;">${noRuas}</td>
                             <td>${item.district}</td>
                             <td style="max-width: 200px;">
                                 <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 0.9rem; color: #64748b;" title="${item.description || '-'}">

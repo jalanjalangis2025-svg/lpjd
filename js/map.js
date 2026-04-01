@@ -116,17 +116,37 @@ async function drawDemakBoundary() {
 
 function createModernPin(color) {
     return L.divIcon({
-        className: 'modern-pin',
+        className: 'pushpin-marker',
         html: `
-            <svg class="pin-svg" viewBox="0 0 384 512" xmlns="http://www.w3.org/2000/svg">
-                <path fill="${color}" d="M172.268 501.67C26.97 291.031 0 269.413 0 192 0 85.961 85.961 0 192 0s192 85.961 192 192c0 77.413-26.97 99.031-172.268 309.67-9.535 13.774-29.93 13.773-39.464 0z"></path>
-                <circle class="pin-dot" cx="192" cy="192" r="64"></circle>
+            <svg viewBox="0 0 100 100" class="pushpin-svg" xmlns="http://www.w3.org/2000/svg">
+                <!-- Metallic Needle -->
+                <path d="M50 95 L50 65" stroke="#cbd5e1" stroke-width="4" stroke-linecap="round" />
+                <path d="M50 95 L50 65" stroke="#64748b" stroke-width="1.5" stroke-linecap="round" transform="translate(1,0)" />
+                
+                <!-- Pushpin Cylinder & Caps (3D effect) -->
+                <g transform="rotate(-20 50 65)">
+                    <!-- Lower Cap -->
+                    <ellipse cx="50" cy="58" rx="20" ry="10" fill="${color}" />
+                    <ellipse cx="50" cy="56" rx="20" ry="10" fill="${color}" style="filter: brightness(1.2);" />
+                    
+                    <!-- Cylinder Body -->
+                    <rect x="36" y="30" width="28" height="26" fill="${color}" />
+                    <rect x="36" y="30" width="6" height="26" fill="rgba(255,255,255,0.3)" /> 
+                    <rect x="58" y="30" width="6" height="26" fill="rgba(0,0,0,0.15)" /> 
+                    
+                    <!-- Upper Top Cap -->
+                    <ellipse cx="50" cy="30" rx="24" ry="12" fill="${color}" style="filter: brightness(0.85);" />
+                    <ellipse cx="50" cy="25" rx="24" ry="12" fill="${color}" />
+                    
+                    <!-- Highlights -->
+                    <ellipse cx="40" cy="22" rx="10" ry="4" fill="rgba(255,255,255,0.45)" />
+                </g>
             </svg>
         `,
-        iconSize: [32, 42],
-        iconAnchor: [16, 42],
+        iconSize: [45, 45],
+        iconAnchor: [22, 45], // Pointy end of the needle
         popupAnchor: [0, -40],
-        tooltipAnchor: [16, -20]
+        tooltipAnchor: [20, -20]
     });
 }
 
@@ -220,6 +240,13 @@ async function loadMapData() {
 
     allReports = data || [];
     populateDistrictFilter();
+    
+    // Load road segments by default alongside reports
+    if (!clipGajahLayer) {
+        await loadClipGajahData();
+        layers.roadConditions.addTo(map);
+    }
+    
     applyFilters();
 }
 
@@ -270,13 +297,29 @@ async function loadClipGajahData() {
         // Clear existing to avoid duplicates
         layers.roadConditions.clearLayers();
 
+        // High-Visibility Outline Layer (White background)
+        L.geoJSON(data, {
+            style: function () {
+                return {
+                    color: 'white',
+                    weight: 12, // Refined outline
+                    opacity: 1,
+                    lineCap: 'round',
+                    lineJoin: 'round',
+                    interactive: false
+                };
+            }
+        }).addTo(layers.roadConditions);
+
+        // Main Condition Layer (Colored top)
         L.geoJSON(data, {
             style: function (feature) {
                 return {
                     color: getConditionColor(feature.properties.Jenis_keru),
-                    weight: 6, // Thicker for priority
+                    weight: 8, // Refined thickness
                     opacity: 1,
                     lineCap: 'round',
+                    lineJoin: 'round',
                     interactive: true
                 };
             },
@@ -286,6 +329,7 @@ async function loadClipGajahData() {
                     ? feature.geometry.coordinates[Math.floor(feature.geometry.coordinates.length / 2)]
                     : feature.geometry.coordinates[0][Math.floor(feature.geometry.coordinates[0].length / 2)];
                 
+                const latLng = [coords[1], coords[0]];
                 const color = getConditionColor(feature.properties.Jenis_keru);
                 const marker = L.marker(latLng, { 
                     icon: createModernPin(color),
@@ -353,38 +397,33 @@ function toggleConditionLayer() {
     const conditionLegend = document.getElementById('conditionLegend');
 
     if (isChecked) {
+        // Mode Fokus Kondisi Jalan (Garis Menonjol)
         mapContainer.classList.add('paper-mode');
-        googleStreets.setOpacity(0); // Hide satellite/streets
+        googleStreets.setOpacity(0); 
         
-        if (!clipGajahLayer) {
-            loadClipGajahData().then(() => {
-                layers.roadConditions.addTo(map);
-                drawGraticule();
-                layers.graticule.addTo(map);
-            });
-        } else {
-            layers.roadConditions.addTo(map);
-            drawGraticule();
-            layers.graticule.addTo(map);
-        }
+        layers.roadConditions.addTo(map);
+        drawGraticule();
+        layers.graticule.addTo(map);
         
         // Faded context roads
         roadLayers.forEach(r => {
             r.layer.setStyle({ color: '#ccc', weight: 1.5, opacity: 0.2 });
         });
         
+        // Hide markers for focus
         layers.markers.remove();
         statusLegend.style.display = 'none';
         conditionLegend.style.display = 'block';
     } else {
+        // Mode Standar (Markers + Garis Ruas)
         mapContainer.classList.remove('paper-mode');
         googleStreets.setOpacity(1); 
         
-        layers.roadConditions.remove();
+        layers.roadConditions.addTo(map); // Keep lines visible but less dominant
         layers.graticule.remove();
         layers.markers.addTo(map);
         
-        applyFilters(); // Restore standard road styles and colorful lines
+        applyFilters(); 
         
         statusLegend.style.display = 'block';
         conditionLegend.style.display = 'none';
