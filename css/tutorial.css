@@ -1,0 +1,103 @@
+html {
+    scroll-behavior: smooth;
+}
+
+.tutorial-hero {
+    margin-top: var(--navbar-height);
+    background: linear-gradient(135deg, #003264 0%, #0056b3 100%);
+    color: white;
+    padding: 80px 0;
+    text-align: center;
+}
+
+.tutorial-hero h1 {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+}
+
+.tutorial-hero p {
+    font-size: 1.1rem;
+    opacity: 0.9;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.tutorial-container {
+    padding: 60px 0;
+    background-color: #f4f7f9;
+}
+
+.tutorial-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    padding: 40px;
+    margin-bottom: 40px;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    scroll-margin-top: 100px;
+}
+
+.tutorial-card h2 {
+    color: var(--primary-blue);
+    margin-bottom: 25px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 1.8rem;
+}
+
+.video-wrapper {
+    position: relative;
+    padding-bottom: 56.25%; /* 16:9 */
+    height: 0;
+    overflow: hidden;
+    border-radius: 8px;
+    background: #000;
+}
+
+.video-wrapper video {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.pdf-wrapper {
+    height: 700px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid #ddd;
+}
+
+.pdf-wrapper iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+
+.download-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background-color: var(--primary-blue);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-weight: 600;
+    margin-top: 15px;
+    transition: background 0.3s;
+}
+
+.download-btn:hover {
+    background-color: var(--primary-dark);
+}
+
+@media (max-width: 768px) {
+    .tutorial-hero h1 {
+        font-size: 2rem;
+    }
+    .pdf-wrapper {
+        height: 500px;
+    }
+}

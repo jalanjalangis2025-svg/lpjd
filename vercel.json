@@ -21,6 +21,18 @@
             "destination": "/home.html"
         },
         {
+            "source": "/tutorial-pdf",
+            "destination": "/tutorial-pdf.html"
+        },
+        {
+            "source": "/tutorial-video",
+            "destination": "/tutorial-video.html"
+        },
+        {
+            "source": "/tutorial",
+            "destination": "/tutorial.html"
+        },
+        {
             "source": "/",
             "destination": "/index.html"
         }

@@ -13,6 +13,8 @@ const MIME_TYPES = {
   '.jpg': 'image/jpeg',
   '.gif': 'image/gif',
   '.svg': 'image/svg+xml',
+  '.pdf': 'application/pdf',
+  '.mp4': 'video/mp4',
 };
 
 http.createServer((req, res) => {
@@ -21,7 +23,7 @@ http.createServer((req, res) => {
   const pathname = urlParts[0];
   const search = urlParts[1] ? '?' + urlParts[1] : '';
 
-  let filePath = '.' + pathname;
+  let filePath = '.' + decodeURIComponent(pathname);
 
   // Default to index.html for root
   if (pathname === '/') {

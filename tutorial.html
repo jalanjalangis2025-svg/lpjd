@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Lapor Jalan - Pemerintah Kabupaten Demak</title>
+  <title>Tutorial Pelaporan - Lapor Jalan Kabupaten Demak</title>
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="images/lambang_kabupaten_demak.png">
   <!-- Fonts -->
@@ -15,6 +15,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="css/navbar.css">
   <link rel="stylesheet" href="css/landing.css">
+  <link rel="stylesheet" href="css/tutorial.css">
 </head>
 
 <body>
@@ -32,13 +33,13 @@
       </button>
 
       <div class="nav-menu" id="navMenu">
-        <a href="index.html" class="nav-link active">Beranda</a>
-        <a href="#tata-cara" class="nav-link" onclick="toggleMenu()">Tata Cara</a>
+        <a href="index.html" class="nav-link">Beranda</a>
+        <a href="index.html#tata-cara" class="nav-link">Tata Cara</a>
         <a href="map.html" class="nav-link">Peta Persebaran</a>
         <a href="public-reports" class="nav-link">Laporan Warga</a>
         <a href="report-public.html" class="nav-link">Lapor Sekarang</a>
 
-        <!-- Mobile Login Button (moved inside for mobile view) -->
+        <!-- Mobile Login Button -->
         <div class="mobile-user-actions">
           <a href="home.html" class="btn-login" id="auth-btn-mobile"><i class="fas fa-lock"></i> Masuk Admin</a>
         </div>
@@ -50,88 +51,38 @@
     </div>
   </nav>
 
-  <script>
-    function toggleMenu() {
-      const menu = document.getElementById('navMenu');
-      menu.classList.toggle('active');
-    }
-  </script>
-
   <!-- Hero Section -->
-  <header class="hero">
-    <div class="container hero-content">
-      <h1>Layanan Lapor Kerusakan Jalan<br>Kabupaten Demak</h1>
-      <p>Sampaikan aspirasi Anda untuk infrastruktur yang lebih baik. Laporkan kerusakan jalan secara online, cepat, dan
-        transparan.</p>
-      <a href="tutorial" class="btn-tutorial" style="display: inline-block; background-color: rgba(255, 255, 255, 0.2); color: white; padding: 12px 36px; border-radius: 6px; font-weight: 600; font-size: 1.1rem; margin-bottom: 1rem; border: 2px solid white; backdrop-filter: blur(5px); transition: all 0.3s; width: fit-content;">
-        <i class="fas fa-play-circle"></i> Tutorial & Panduan
-      </a>
-      <br>
-      <a href="report-public.html" class="btn-cta">
-        <i class="fas fa-edit"></i> Buat Laporan Baru
-      </a>
+  <header class="tutorial-hero">
+    <div class="container">
+      <h1>Panduan & Tutorial</h1>
+      <p>Pilih kategori panduan sesuai kebutuhan Anda: Dokumen PDF atau Video Tutorial.</p>
     </div>
   </header>
 
-  <!-- Stats Section -->
-  <section class="stats-section">
+  <!-- Main Content -->
+  <main class="tutorial-container">
     <div class="container">
-      <div class="stats-grid">
-        <a href="public-reports?status=all" class="stat-card">
-          <div class="stat-number" id="totalReports">0</div>
-          <div class="stat-label">Laporan Masuk</div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; max-width: 900px; margin: 0 auto;">
+        
+        <!-- Category: PDF -->
+        <a href="tutorial-pdf" class="tutorial-card" style="text-decoration: none; transition: all 0.3s; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 250px;">
+          <i class="fas fa-file-pdf" style="font-size: 4rem; color: #e11d48; margin-bottom: 1.5rem;"></i>
+          <h2 style="margin-bottom: 0.5rem;">Panduan Dokumen PDF</h2>
+          <p style="color: #666; text-align: center;">Baca atau unduh panduan teknis langkah demi langkah format PDF.</p>
+          <span style="margin-top: 1.5rem; background: var(--primary-blue); color: white; padding: 8px 24px; border-radius: 20px; font-weight: 600;">Lihat Panduan</span>
         </a>
-        <a href="public-reports?status=verified" class="stat-card">
-          <div class="stat-number verified" id="verifiedReports">0</div>
-          <div class="stat-label">Laporan Diterima</div>
+
+        <!-- Category: Video -->
+        <a href="tutorial-video" class="tutorial-card" style="text-decoration: none; transition: all 0.3s; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 250px;">
+          <i class="fas fa-video" style="font-size: 4rem; color: #3b82f6; margin-bottom: 1.5rem;"></i>
+          <h2 style="margin-bottom: 0.5rem;">Video Tutorial</h2>
+          <p style="color: #666; text-align: center;">Tonton simulasi pelaporan melalui video tutorial yang interaktif.</p>
+          <span style="margin-top: 1.5rem; background: var(--primary-blue); color: white; padding: 8px 24px; border-radius: 20px; font-weight: 600;">Putar Video</span>
         </a>
-        <a href="public-reports?status=rejected" class="stat-card">
-          <div class="stat-number rejected" id="rejectedReports">0</div>
-          <div class="stat-label">Laporan Ditolak</div>
-        </a>
-        </a>
+
       </div>
     </div>
-  </section>
-
-  <!-- Step / Info Section -->
-  <section class="info-section" id="tata-cara">
-    <div class="container">
-      <div class="section-header">
-        <h2>Alur Pengaduan</h2>
-        <p>Ikuti langkah mudah berikut untuk melaporkan kerusakan jalan</p>
-      </div>
-
-      <div class="cards-grid">
-        <!-- Step 1 -->
-        <div class="info-card">
-          <div class="card-icon">
-            <i class="fas fa-camera"></i>
-          </div>
-          <h3>1. Foto & Lokasi</h3>
-          <p>Ambil foto kerusakan jalan dan pastikan lokasi Anda terdeteksi oleh GPS (Geotagging).</p>
-        </div>
-
-        <!-- Step 2 -->
-        <div class="info-card">
-          <div class="card-icon">
-            <i class="fas fa-pen-to-square"></i>
-          </div>
-          <h3>2. Isi Formulir</h3>
-          <p>Lengkapi formulir pengaduan dengan detail kerusakan dan pilih kecamatan yang sesuai.</p>
-        </div>
-
-        <!-- Step 3 -->
-        <div class="info-card">
-          <div class="card-icon">
-            <i class="fas fa-check-circle"></i>
-          </div>
-          <h3>3. Verifikasi & Tindak Lanjut</h3>
-          <p>Laporan Anda akan diverifikasi oleh Admin dan diteruskan ke dinas terkait untuk perbaikan.</p>
-        </div>
-      </div>
-    </div>
-  </section>
+  </main>
 
   <!-- Footer -->
   <footer class="footer">
@@ -172,9 +123,14 @@
     </div>
   </footer>
 
+  <script>
+    function toggleMenu() {
+      const menu = document.getElementById('navMenu');
+      menu.classList.toggle('active');
+    }
+  </script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/supabase.js"></script>
-  <script src="js/landing.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', async () => {
       // Check auth status
