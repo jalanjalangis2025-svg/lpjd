@@ -3,12 +3,12 @@
  * Uses Turf.js for spatial calculations
  */
 
-async function handleGeoJsonImport(input) {
+async function handleGeoJsonImport(input, type = 'all') {
     const file = input.files[0];
     if (!file) return;
 
     // Open Modal
-    openImportModal();
+    openImportModal(type);
     updateImportStatus("Membaca file...", 0);
 
     try {
@@ -32,7 +32,7 @@ async function handleGeoJsonImport(input) {
 
         for (let i = 0; i < total; i += batchSize) {
             const batch = features.slice(i, i + batchSize);
-            const records = batch.map(feature => mapFeatureToRecord(feature, districtBoundaries));
+            const records = batch.map(feature => mapFeatureToRecord(feature, districtBoundaries, type));
             
             updateImportStatus(`Mengunggah data ${i + 1} - ${Math.min(i + batchSize, total)}...`, 10 + (i / total * 85));
 
@@ -79,7 +79,7 @@ function getRobustProperty(props, keys, defaultValue = null) {
     return defaultValue;
 }
 
-function mapFeatureToRecord(feature, districtBoundaries) {
+function mapFeatureToRecord(feature, districtBoundaries, type = 'all') {
     const props = feature.properties || {};
     
     // Calculate Point from Geometry (Midpoint/Center)
@@ -119,11 +119,28 @@ function mapFeatureToRecord(feature, districtBoundaries) {
     const noRuas = getRobustProperty(props, ['No_Ruas', 'NO_RUA', 'No_Ruas_J', 'Ruas_ID'], '-');
     const length = parseFloat(getRobustProperty(props, ['SHAPE_Leng', 'Panjang', 'Lenth', 'Length', 'Shape_Length'], 0)) || 0;
     
-    const sdiValue = parseFloat(getRobustProperty(props, ['SDI', 'sdi_value', 'Skor_kerus', 'Skor_Kerus', 'skor_kerus', 'SKOR'], 0)) || 0;
-    const sdiCategory = getRobustProperty(props, ['SDI_Category', 'Jenis_keru', 'Jenis_ke_1', 'jenis_keru', 'Kondisi', 'kondisi'], 'Unknown');
-    
-    const pciValue = parseFloat(getRobustProperty(props, ['PCI', 'pci_value', 'PCI_Index'], null));
-    const pciCategory = getRobustProperty(props, ['PCI_Category', 'pci_cat'], null);
+    console.log(`Importing feature as type: ${type}`);
+
+    if (type === 'sdi') {
+        sdiValue = parseFloat(getRobustProperty(props, ['SDI', 'sdi_value', 'Skor_kerus', 'Skor_Kerus', 'skor_kerus', 'SKOR'], 0)) || 0;
+        sdiCategory = getRobustProperty(props, ['SDI_Category', 'Jenis_keru', 'Jenis_ke_1', 'jenis_keru', 'Kondisi', 'kondisi'], 'Unknown');
+        pciValue = null;
+        pciCategory = null;
+    } else if (type === 'pci') {
+        pciValue = parseFloat(getRobustProperty(props, ['PCI', 'pci_value', 'PCI_Index', 'Skor_kerus', 'Skor_Kerus', 'skor_kerus', 'SKOR'], 0)) || 0;
+        pciCategory = getRobustProperty(props, ['PCI_Category', 'pci_cat', 'Jenis_keru', 'Jenis_ke_1', 'jenis_keru', 'Kondisi', 'kondisi'], 'Unknown');
+        sdiValue = null;
+        sdiCategory = null;
+    } else {
+        sdiValue = parseFloat(getRobustProperty(props, ['SDI', 'sdi_value', 'Skor_kerus', 'Skor_Kerus', 'skor_kerus', 'SKOR'], null));
+        sdiCategory = getRobustProperty(props, ['SDI_Category', 'Jenis_keru', 'Jenis_ke_1', 'jenis_keru', 'Kondisi', 'kondisi'], null);
+        pciValue = parseFloat(getRobustProperty(props, ['PCI', 'pci_value', 'PCI_Index'], null));
+        pciCategory = getRobustProperty(props, ['PCI_Category', 'pci_cat'], null);
+    }
+
+    // Add type to description for easier identification
+    const typeLabel = type === 'sdi' ? '[SDI]' : (type === 'pci' ? '[PCI]' : '');
+    const finalDescription = `${typeLabel} ${name} (Ruas #${noRuas})`;
 
     return {
         report_source: 'admin',
@@ -131,7 +148,7 @@ function mapFeatureToRecord(feature, districtBoundaries) {
         district: districtName,
         latitude: lat,
         longitude: lng,
-        description: `${name} (Ruas #${noRuas})`,
+        description: finalDescription,
         damage_length: length,
         damage_width: 0,
         report_date: new Date().toISOString().split('T')[0],
@@ -146,13 +163,14 @@ function mapFeatureToRecord(feature, districtBoundaries) {
 }
 
 // UI Helpers for Import
-function openImportModal() {
+function openImportModal(type = 'all') {
     const modal = document.getElementById('importModal');
     modal.style.display = 'flex';
     modal.style.opacity = '1';
     modal.classList.add('active');
     
-    document.getElementById('importTitle').innerText = "Mengimport Data...";
+    const typeLabel = type === 'sdi' ? 'SDI' : (type === 'pci' ? 'PCI' : '');
+    document.getElementById('importTitle').innerText = `Mengimport Data ${typeLabel}...`;
     document.getElementById('importSpinner').style.display = 'block';
     document.getElementById('closeImportBtn').style.display = 'none';
     document.getElementById('importProgress').style.width = '0%';

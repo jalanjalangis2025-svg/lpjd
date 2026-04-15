@@ -2,6 +2,7 @@
 let adminMap = null;
 let districtLayers = {};
 let roadLayers = [];
+let currentMapConditionView = 'sdi'; // 'sdi' or 'pci'
 const layers = {
     markers: L.layerGroup(),
     boundary: L.layerGroup(),
@@ -83,11 +84,11 @@ async function drawDemakBoundary() {
                 style: function (feature) {
                     const name = feature.properties.kecamatan;
                     return {
-                        color: 'white',
-                        weight: 1.5,
-                        opacity: 0.8,
+                        color: 'transparent',
+                        weight: 0,
+                        opacity: 0,
                         fillColor: districtColors[name] || '#94a3b8',
-                        fillOpacity: 0.25
+                        fillOpacity: 0.15
                     };
                 },
                 onEachFeature: function (feature, layer) {
@@ -124,11 +125,18 @@ async function drawDemakBoundary() {
 
 function getConditionColor(condition) {
     const c = (condition || '').toLowerCase();
-    if (c.includes('bagus') || c.includes('baik')) return '#22c55e'; // Green
-    if (c.includes('sedang')) return '#eab308'; // Yellow
-    if (c.includes('ringan')) return '#f97316'; // Orange
-    if (c.includes('berat') || c.includes('rusak')) return '#ef4444'; // Red
+    if (c.includes('bagus') || c.includes('baik') || c.includes('excellent') || c.includes('good')) return '#22c55e'; // Green
+    if (c.includes('sedang') || c.includes('fair')) return '#eab308'; // Yellow
+    if (c.includes('ringan') || c.includes('poor')) return '#f97316'; // Orange
+    if (c.includes('berat') || c.includes('rusak') || c.includes('very poor') || c.includes('failed')) return '#ef4444'; // Red
     return '#94a3b8'; // Grey default
+}
+
+function getPciCategory(value) {
+    if (value >= 85) return 'Bagus';
+    if (value >= 70) return 'Sedang';
+    if (value >= 55) return 'Rusak Ringan';
+    return 'Rusak Berat';
 }
 
 function getRobustProperty(props, keys, defaultValue = null) {
@@ -146,37 +154,66 @@ async function loadClipGajahData() {
     // Clear existing layers first to ensure we aren't showing old/conflicting data
     layers.roadConditions.clearLayers();
     
+    // --- DISTRICT FILTERING LOGIC ---
+    // If a district is selected, we only show road segments that belong to that district.
+    const filterDistrict = window.currentMapDistrict || 'all';
+    let validRuas = new Set();
+    
+    if (filterDistrict !== 'all' && window.allReports) {
+        window.allReports.forEach(r => {
+            if (r.district === filterDistrict && r.no_ruas) {
+                validRuas.add(String(r.no_ruas));
+            }
+        });
+        console.log(`Filtering road lines for ${filterDistrict}. Valid Ruas count: ${validRuas.size}`);
+    }
+
     // List of files to attempt loading (supports multiple GIS exports)
-    const geojsonFiles = ['/hasilclipgajah.geojson', '/clipan.geojson'];
+    const geojsonFiles = ['/hasilclipgajah.geojson', '/clipan.geojson', '/hasilgajahpci.geojson', '/hasildempetpci.geojson'];
     
     for (const file of geojsonFiles) {
         try {
             const res = await fetch(file);
-            if (!res.ok) continue; 
+            if (!res.ok) continue;
             
             const data = await res.json();
             console.log(`Successfully loaded road data from: ${file}`);
 
-            // 1. High-Visibility Outline Layer (White background)
-            L.geoJSON(data, {
-                style: function () {
-                    return {
-                        color: 'white',
-                        weight: 12, // Refined outline
-                        opacity: 1,
-                        lineCap: 'round',
-                        lineJoin: 'round',
-                        interactive: false
-                    };
+            const geojsonOptions = {
+                filter: function(feature) {
+                    if (filterDistrict === 'all') return true;
+                    // Match by No_Ruas primary key
+                    const noRuas = String(getRobustProperty(feature.properties, ['No_Ruas', 'NO_RUA', 'No_Ruas_J', 'Ruas_ID'], ''));
+                    // Fallback to name-based lookup
+                    const name = String(getRobustProperty(feature.properties, ['Name', 'Nama_Ruas'], '')).toLowerCase();
+                    return validRuas.has(noRuas) || name.includes(filterDistrict.toLowerCase());
                 }
-            }).addTo(layers.roadConditions);
+            };
+
 
             // 2. Main Condition Layer
             L.geoJSON(data, {
+                ...geojsonOptions,
                 style: function (feature) {
-                    const sdiCategory = getRobustProperty(feature.properties, ['SDI_Category', 'Jenis_keru', 'Jenis_ke_1', 'jenis_keru', 'Kondisi', 'kondisi'], 'Unknown');
+                    let category = 'Unknown';
+                    if (currentMapConditionView === 'sdi') {
+                        category = getRobustProperty(feature.properties, ['SDI_Category', 'Jenis_keru', 'Jenis_ke_1', 'jenis_keru', 'Kondisi', 'kondisi'], 'Unknown');
+                    } else if (currentMapConditionView === 'pci') {
+                        const pciVal = parseFloat(getRobustProperty(feature.properties, ['PCI', 'pci_value', 'PCI_Index'], 0)) || 0;
+                        category = getRobustProperty(feature.properties, ['PCI_Category', 'pci_cat'], getPciCategory(pciVal));
+                    } else {
+                        // 'warga' view - neutral roads
+                        return {
+                            color: '#cbd5e1',
+                            weight: 4,
+                            opacity: 0.5,
+                            lineCap: 'round',
+                            interactive: false
+                        };
+                    }
+                    
                     return {
-                        color: getConditionColor(sdiCategory),
+                        color: getConditionColor(category),
                         weight: 8, // Refined thickness
                         opacity: 1,
                         lineCap: 'round',
@@ -185,6 +222,8 @@ async function loadClipGajahData() {
                     };
                 },
                 onEachFeature: function (feature, layer) {
+                    if (currentMapConditionView === 'warga') return;
+                    
                     const props = feature.properties || {};
                     // Use midpoint for better popup/marker placement
                     const coords = feature.geometry.type === 'LineString' 
@@ -254,8 +293,17 @@ async function loadClipGajahData() {
                     marker.bindPopup(popup);
                     layers.roadConditions.addLayer(marker);
 
-                    layer.bindPopup(popup);
-                    layer.bindTooltip(`RUAS: ${noRuas}`, { sticky: true });
+                     layer.bindPopup(popup);
+                    
+                    let hoverText = '';
+                    if (currentMapConditionView === 'sdi') {
+                        hoverText = `SDI: ${sdiValue} (${sdiCategory})`;
+                    } else {
+                        const pciVal = getRobustProperty(props, ['PCI', 'pci_value', 'PCI_Index'], 0);
+                        const pciCat = getRobustProperty(props, ['PCI_Category', 'pci_cat'], getPciCategory(pciVal));
+                        hoverText = `PCI: ${pciVal} (${pciCat})`;
+                    }
+                    layer.bindTooltip(`RUAS: ${noRuas} | ${hoverText}`, { sticky: true });
                 }
             }).addTo(layers.roadConditions);
             
@@ -267,12 +315,18 @@ async function loadClipGajahData() {
     }
 }
 
-function createModernPin(color, source = null) {
+function createModernPin(color, type = 'public') {
     let iconHtml = '';
-    if (source === 'public') {
-        iconHtml = '<i class="fas fa-user" style="color: white; font-size: 10px; position: absolute; top: 22px; left: 50%; transform: translateX(-50%) rotate(20deg); text-shadow: 0 1px 2px rgba(0,0,0,0.5);"></i>';
-    } else if (source === 'admin') {
-        iconHtml = '<i class="fas fa-tools" style="color: white; font-size: 10px; position: absolute; top: 22px; left: 50%; transform: translateX(-50%) rotate(20deg); text-shadow: 0 1px 2px rgba(0,0,0,0.5);"></i>';
+    const iconStyle = 'color: white; font-size: 10px; position: absolute; top: 22px; left: 50%; transform: translateX(-50%) rotate(20deg); text-shadow: 0 1px 2px rgba(0,0,0,0.5);';
+    
+    if (type === 'public') {
+        iconHtml = `<i class="fas fa-user" style="${iconStyle}"></i>`;
+    } else if (type === 'sdi') {
+        iconHtml = `<i class="fas fa-file-medical-alt" style="${iconStyle}"></i>`;
+    } else if (type === 'pci') {
+        iconHtml = `<i class="fas fa-chart-line" style="${iconStyle}"></i>`;
+    } else if (type === 'admin') {
+        iconHtml = `<i class="fas fa-tools" style="${iconStyle}"></i>`;
     }
 
     return L.divIcon({
@@ -329,32 +383,43 @@ function renderAdminMap(reports) {
     layers.markers.clearLayers();
 
     // Report markers (verified/pending/rejected) disabled for admin map per user request
-    /*
     reports.forEach(report => {
-        const { latitude, longitude, status, id, district, reporter_name, report_source } = report;
+        const { latitude, longitude, status, id, district, reporter_name, report_source, description } = report;
+        if (!latitude || !longitude) return;
+
+        // Determine Type for Icon
+        let type = report_source;
+        const desc = (description || '').toUpperCase();
+        if (report_source === 'admin') {
+            if (desc.includes('[SDI]')) type = 'sdi';
+            else if (desc.includes('[PCI]')) type = 'pci';
+        }
+
         const color = getMarkerColor(report);
         const marker = L.marker([latitude, longitude], {
-            icon: createModernPin(color, report_source)
+            icon: createModernPin(color, type)
         });
 
         let statusLabel = status === 'verified' ? 'Verified' : (status === 'rejected' ? 'Rejected' : 'Pending');
+        let typeLabel = type === 'public' ? 'Laporan Warga' : (type === 'sdi' ? 'Data Teknis SDI' : 'Data Teknis PCI');
 
         const popupContent = `
             <div style="font-family: 'Plus Jakarta Sans', sans-serif; min-width: 260px; padding: 5px;">
+                <div style="font-size: 0.7rem; font-weight: 800; color: #3b82f6; text-transform: uppercase; margin-bottom: 2px;">${typeLabel}</div>
                 <div style="font-weight: 800; font-size: 1.15rem; color: #1e293b; margin-bottom: 5px; line-height: 1.2;">${district || 'Lokasi'}</div>
-                <div style="font-size: 0.85rem; color: #64748b; margin-bottom: 12px; display: flex; align-items: center; gap: 5px;">
+                <div style="font-size: 0.8rem; color: #64748b; margin-bottom: 12px; display: flex; align-items: center; gap: 5px;">
                     <i class="fas fa-user-edit"></i> Pelapor: ${reporter_name || 'Admin'}
                 </div>
 
                 <div style="background: #f8fafc; border-radius: 12px; padding: 12px; border: 1px solid #e2e8f0; margin-bottom: 15px; display: flex; justify-content: space-around;">
                     <div style="text-align: center;">
                         <div style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px;">SDI INDEX</div>
-                        <div style="font-weight: 800; color: #334155; font-size: 1.1rem;">${(report.sdi_value !== null && report.sdi_value !== undefined) ? report.sdi_value : 0}</div>
+                        <div style="font-weight: 800; color: #334155; font-size: 1.1rem;">${(report.sdi_value !== null && report.sdi_value !== undefined) ? report.sdi_value : '-'}</div>
                     </div>
                     <div style="width: 1px; background: #e2e8f0;"></div>
                     <div style="text-align: center;">
                         <div style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px;">PCI INDEX</div>
-                        <div style="font-weight: 800; color: #334155; font-size: 1.1rem;">${(report.pci_value !== null && report.pci_value !== undefined) ? report.pci_value : 0}</div>
+                        <div style="font-weight: 800; color: #334155; font-size: 1.1rem;">${(report.pci_value !== null && report.pci_value !== undefined) ? report.pci_value : '-'}</div>
                     </div>
                 </div>
 
@@ -374,11 +439,10 @@ function renderAdminMap(reports) {
             </div>
         `;
 
-        marker.bindTooltip(`ADMIN VIEW: ${district}`, { className: 'modern-tooltip' });
+        marker.bindTooltip(`${typeLabel}: ${district}`, { className: 'modern-tooltip' });
         marker.bindPopup(popupContent);
         layers.markers.addLayer(marker);
     });
-    */
 }
 
 function refreshMapSize() {
@@ -414,3 +478,76 @@ setTimeout(() => {
         }
     }
 }, 2000);
+
+
+window.setMapConditionView = function(view) {
+    currentMapConditionView = view;
+    
+    // Update buttons
+    const allBtn = document.getElementById('btn-view-all');
+    const sdiBtn = document.getElementById('btn-view-sdi');
+    const pciBtn = document.getElementById('btn-view-pci');
+    const wargaBtn = document.getElementById('btn-view-warga');
+    const legendTitle = document.querySelector('.legend-section-title');
+    const legendSection = document.querySelector('.legend-section');
+
+    const resetBtns = () => {
+        [allBtn, sdiBtn, pciBtn, wargaBtn].forEach(b => {
+            if (b) { b.style.background = 'transparent'; b.style.color = '#64748b'; b.style.boxShadow = 'none'; }
+        });
+    };
+
+    const setActive = (btn) => {
+        if (btn) { btn.style.background = 'white'; btn.style.color = '#3b82f6'; btn.style.boxShadow = '0 2px 4px rgba(0,0,0,0.05)'; }
+    };
+
+    resetBtns();
+    
+    if (view === 'all') {
+        setActive(allBtn);
+        legendTitle.innerText = "Data Semua Laporan";
+        legendSection.innerHTML = `
+            <h4 class="legend-section-title">Kombinasi Data & Laporan</h4>
+            <div class="legend-item"><span class="marker-legend verified"></span><span style="color: #16a34a; font-weight: 800;">Verified (Hijau)</span></div>
+            <div class="legend-item"><span class="marker-legend pending"></span><span style="color: #ca8a04; font-weight: 800;">Pending (Kuning)</span></div>
+            <div class="legend-item"><span class="marker-legend rejected"></span><span style="color: #dc2626; font-weight: 800;">Rejected (Merah)</span></div>
+        `;
+        if (window.switchMapTab) window.switchMapTab('all');
+    } else if (view === 'sdi') {
+        setActive(sdiBtn);
+        legendTitle.innerText = "Kondisi Jalan (SDI)";
+        legendSection.innerHTML = `
+            <h4 class="legend-section-title">Kondisi Jalan (SDI)</h4>
+            <div class="legend-item"><span class="line-legend bagus"></span><span style="color: #15803d; font-weight: 800;">Bagus (0-50)</span></div>
+            <div class="legend-item"><span class="line-legend sedang"></span><span style="color: #a16207; font-weight: 800;">Sedang (50-100)</span></div>
+            <div class="legend-item"><span class="line-legend ringan"></span><span style="color: #c2410c; font-weight: 800;">Rusak Ringan (100-150)</span></div>
+            <div class="legend-item"><span class="line-legend berat"></span><span style="color: #b91c1c; font-weight: 800;">Rusak Berat (>150)</span></div>
+        `;
+        if (window.switchMapTab) window.switchMapTab('sdi');
+    } else if (view === 'pci') {
+        setActive(pciBtn);
+        legendTitle.innerText = "Kondisi Jalan (PCI)";
+        legendSection.innerHTML = `
+            <h4 class="legend-section-title">Kondisi Jalan (PCI)</h4>
+            <div class="legend-item"><span class="line-legend bagus"></span><span style="color: #15803d; font-weight: 800;">Sangat Baik (80-100)</span></div>
+            <div class="legend-item"><span class="line-legend sedang"></span><span style="color: #a16207; font-weight: 800;">Baik (60-80)</span></div>
+            <div class="legend-item"><span class="line-legend ringan"></span><span style="color: #c2410c; font-weight: 800;">Kurang (40-60)</span></div>
+            <div class="legend-item"><span class="line-legend berat"></span><span style="color: #b91c1c; font-weight: 800;">Hancur (<40)</span></div>
+        `;
+        if (window.switchMapTab) window.switchMapTab('pci');
+
+    } else if (view === 'warga') {
+        setActive(wargaBtn);
+        legendTitle.innerText = "Data Laporan Warga";
+        legendSection.innerHTML = `
+            <h4 class="legend-section-title">Laporan Berdasarkan Status</h4>
+            <div class="legend-item"><span class="marker-legend verified"></span><span style="color: #16a34a; font-weight: 800;">Verified (Diverifikasi)</span></div>
+            <div class="legend-item"><span class="marker-legend pending"></span><span style="color: #ca8a04; font-weight: 800;">Pending (Menunggu)</span></div>
+            <div class="legend-item"><span class="marker-legend rejected"></span><span style="color: #dc2626; font-weight: 800;">Rejected (Ditolak)</span></div>
+        `;
+        if (window.switchMapTab) window.switchMapTab('public');
+    }
+    
+    // Refresh layers
+    loadClipGajahData();
+};

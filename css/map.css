@@ -337,6 +337,20 @@ body.map-page-body {
 .line-legend.ringan { background: #f97316; }
 .line-legend.berat { background: #ef4444; }
 
+/* Marker Legend Dots */
+.marker-legend {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+    border: 2px solid white;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.marker-legend.verified { background: #22c55e; }
+.marker-legend.pending { background: #eab308; }
+.marker-legend.rejected { background: #ef4444; }
+
 /* Legacy Legend Card for Admin */
 .legend-card {
     position: absolute;

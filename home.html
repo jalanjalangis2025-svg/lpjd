@@ -162,7 +162,38 @@
 
         <!-- MAP VIEW -->
         <div id="map-view" class="view-section">
-            <h2 style="margin-bottom: 20px;">Maps Admin (Kelola Data)</h2>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; flex-wrap: wrap; gap: 20px;">
+                <h2 style="margin: 0;">Maps Admin (Kelola Data)</h2>
+                
+                <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <label style="font-size: 0.85rem; color: #64748b; font-weight: 700;">DATA:</label>
+                        <div style="display: flex; gap: 4px; background: #f1f5f9; padding: 4px; border-radius: 10px; border: 1px solid #e2e8f0;">
+                            <button id="btn-view-all" onclick="setMapConditionView('all')" style="border: none; background: transparent; color: #64748b; padding: 6px 12px; border-radius: 8px; font-weight: 700; font-size: 0.8rem; cursor: pointer; transition: all 0.2s;">Semua</button>
+                            <button id="btn-view-warga" onclick="setMapConditionView('warga')" style="border: none; background: transparent; color: #64748b; padding: 6px 12px; border-radius: 8px; font-weight: 700; font-size: 0.8rem; cursor: pointer; transition: all 0.2s;">Warga</button>
+                            <button id="btn-view-sdi" onclick="setMapConditionView('sdi')" style="border: none; background: white; color: #3b82f6; padding: 6px 12px; border-radius: 8px; font-weight: 700; font-size: 0.8rem; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">SDI</button>
+                            <button id="btn-view-pci" onclick="setMapConditionView('pci')" style="border: none; background: transparent; color: #64748b; padding: 6px 12px; border-radius: 8px; font-weight: 700; font-size: 0.8rem; cursor: pointer; transition: all 0.2s;">PCI</button>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <label style="font-size: 0.85rem; color: #64748b; font-weight: 700;">STATUS:</label>
+                        <select id="mapStatusFilter" onchange="setMapStatusFilter(this.value)"
+                            style="padding: 8px 12px; border-radius: 8px; border: 1px solid #e2e8f0; font-family: inherit; font-size: 0.85rem; color: #1e293b; outline: none; cursor: pointer; background: #f8fafc;">
+                            <option value="all">Semua Status</option>
+                            <option value="pending">Pending</option>
+                            <option value="verified">Verified</option>
+                            <option value="rejected">Rejected</option>
+                        </select>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <label style="font-size: 0.85rem; color: #64748b; font-weight: 700;">KECAMATAN:</label>
+                        <select id="mapDistrictFilter" onchange="setMapDistrictFilter(this.value)"
+                            style="padding: 8px 12px; border-radius: 8px; border: 1px solid #e2e8f0; font-family: inherit; font-size: 0.85rem; color: #1e293b; outline: none; cursor: pointer; background: #f8fafc;">
+                            <option value="all">Semua Kecamatan</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
             <div class="map-wrapper" style="position: relative;">
                 <div id="admin-map"
                     style="height: 500px; width: 100%; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 30px;">
@@ -194,27 +225,21 @@
                 </div>
             </div>
 
-            <!-- Table for Map View -->
-            <div class="actions-toolbar">
-                <div style="font-weight: 700; font-size: 1.2rem;">Data Laporan di Peta</div>
+            <!-- Table header above data -->
+            <div class="actions-toolbar" style="padding: 15px 25px; border-bottom: 1px solid #f1f5f9; background: #f8fafc; border-top-left-radius: 12px; border-top-right-radius: 12px; margin-top: 20px;">
+                <div style="font-weight: 700; font-size: 1.1rem; color: #334155;">
+                    <i class="fas fa-table" style="margin-right: 8px; color: #64748b;"></i> Detail Laporan Terfilter
+                </div>
             </div>
+
             <div class="table-container">
                 <table>
-                    <thead>
-                        <tr>
-                            <th style="width: 50px;">No.</th>
-                            <th>Tanggal</th>
-                            <th>Sumber</th>
-                            <th>Pelapor</th>
-                            <th>Lokasi</th>
-                            <th>Keterangan</th>
-                            <th>Status</th>
-                            <th style="text-align: center;">Aksi</th>
-                        </tr>
+                    <thead id="mapTableHead">
+                        <!-- Dynamic Map Headers -->
                     </thead>
                     <tbody id="mapReportTable">
                         <tr>
-                            <td colspan="7" style="text-align: center; padding: 3rem; color: #94a3b8;">
+                            <td colspan="10" style="text-align: center; padding: 3rem; color: #94a3b8;">
                                 <i class="fas fa-circle-notch fa-spin"></i> Memuat data...
                             </td>
                         </tr>
@@ -231,14 +256,21 @@
             <div class="actions-toolbar">
                 <div style="font-weight: 700; font-size: 1.2rem;">Manajemen Data</div>
 
-                <div style="display: flex; gap: 15px;">
+                <div style="display: flex; gap: 15px; flex-wrap: wrap;">
                     <button class="action-btn btn-primary" onclick="window.location.href='/report-admin'">
                         <i class="fas fa-plus"></i> Input Manual
                     </button>
-                    <button class="action-btn" style="background: #8b5cf6; color: white;" onclick="document.getElementById('geoJsonInput').click()">
-                        <i class="fas fa-file-import"></i> Bulk Import GeoJSON
+                    <!-- Separate Bulk Import Buttons -->
+                    <button class="action-btn" style="background: #8b5cf6; color: white;" onclick="document.getElementById('sdiImportInput').click()">
+                        <i class="fas fa-file-import"></i> Bulk Import SDI
                     </button>
-                    <input type="file" id="geoJsonInput" accept=".geojson,.json" style="display: none;" onchange="handleGeoJsonImport(this)">
+                    <button class="action-btn" style="background: #a855f7; color: white;" onclick="document.getElementById('pciImportInput').click()">
+                        <i class="fas fa-file-import"></i> Bulk Import PCI
+                    </button>
+                    
+                    <input type="file" id="sdiImportInput" accept=".geojson,.json" style="display: none;" onchange="handleGeoJsonImport(this, 'sdi')">
+                    <input type="file" id="pciImportInput" accept=".geojson,.json" style="display: none;" onchange="handleGeoJsonImport(this, 'pci')">
+                    
                     <button class="action-btn btn-secondary" onclick="window.open('/map', '_blank')">
                         <i class="fas fa-map"></i> Lihat Peta
                     </button>
@@ -249,10 +281,16 @@
                 style="display: flex; justify-content: space-between; align-items: center; width: 100%; flex-wrap: wrap; gap: 15px;">
                 <div style="display: flex; gap: 10px;">
                     <button class="tab-btn active" id="tab-public" onclick="switchReportTab('public')">
-                        <i class="fas fa-users"></i> Laporan Warga
+                        <i class="fas fa-users"></i> Warga
                     </button>
-                    <button class="tab-btn" id="tab-admin" onclick="switchReportTab('admin')">
-                        <i class="fas fa-hard-hat"></i> Data Teknis Dinas
+                    <button class="tab-btn" id="tab-sdi" onclick="switchReportTab('sdi')">
+                        <i class="fas fa-file-medical-alt"></i> SDI
+                    </button>
+                    <button class="tab-btn" id="tab-pci" onclick="switchReportTab('pci')">
+                        <i class="fas fa-chart-line"></i> PCI
+                    </button>
+                    <button class="tab-btn" id="tab-all" onclick="switchReportTab('all')">
+                        <i class="fas fa-list"></i> Semua
                     </button>
                 </div>
 
@@ -512,12 +550,16 @@
     <script>
         let allReports = [];
         let selectedReportId = null;
-        let currentTab = 'public'; // 'public' or 'admin'
+        let currentTab = 'public'; // 'public', 'sdi', 'pci', or 'all'
         let currentAdminDistrict = 'all';
         let currentAdminPage = 1;
         const adminItemsPerPage = 10;
+
+        let currentMapTab = 'public'; 
+        let currentMapDistrict = 'all';
+        let currentMapStatus = 'all';
         let currentMapPage = 1;
-        const mapItemsPerPage = 10;
+        const mapItemsPerPage = 5;
 
         const districts = [
             "Mranggen", "Karangawen", "Guntur", "Sayung", "Karangtengah",
@@ -661,20 +703,25 @@
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
             if (type === 'public') {
                 document.getElementById('nav-public-reports').classList.add('active');
-            } else {
+            } else if (type === 'sdi' || type === 'pci') {
                 document.getElementById('nav-reports').classList.add('active');
             }
             filterAndRender();
         }
 
-        function populateAdminFilters() {
-            const select = document.getElementById('adminDistrictFilter');
-            districts.sort().forEach(d => {
-                const opt = document.createElement('option');
-                opt.value = d;
-                opt.textContent = d;
-                select.appendChild(opt);
-            });
+        function populateAdminFilters() {            // Update select options for both views
+            const adminSelect = document.getElementById('adminDistrictFilter');
+            const mapSelect = document.getElementById('mapDistrictFilter');
+            
+            if (adminSelect) {
+                adminSelect.innerHTML = '<option value="all">Semua Kecamatan</option>' + 
+                    districts.map(d => `<option value="${d}">${d}</option>`).join('');
+            }
+            
+            if (mapSelect) {
+                mapSelect.innerHTML = '<option value="all">Semua Kecamatan</option>' + 
+                    districts.map(d => `<option value="${d}">${d}</option>`).join('');
+            }
         }
 
         function setAdminDistrictFilter(val) {
@@ -721,12 +768,9 @@
 
                 allReports = allData;
                 updateStats();
+                populateAdminFilters();
                 filterAndRender();
-                renderMapTable(allReports);
-
-                if (window.renderAdminMap) {
-                    renderAdminMap(allReports);
-                }
+                renderMapTable(); 
             } catch (err) {
                 console.error("Gagal memuat laporan:", err);
             }
@@ -765,76 +809,257 @@
 
         function changeMapPage(page) {
             currentMapPage = page;
-            renderMapTable(allReports);
+            renderMapTable();
         }
 
-        function renderMapTable(data) {
+        function switchMapTab(tab) {
+            currentMapTab = tab;
+            currentMapPage = 1;
+            
+            // Render table based on new state
+            renderMapTable();
+        }
+
+        function setMapDistrictFilter(district) {
+            currentMapDistrict = district;
+            currentMapPage = 1;
+            renderMapTable();
+            
+            // Refresh GeoJSON layers to filter road lines
+            if (window.loadClipGajahData) {
+                window.loadClipGajahData();
+            }
+        }
+
+        function setMapStatusFilter(status) {
+            currentMapStatus = status;
+            currentMapPage = 1;
+            renderMapTable();
+        }
+
+        function renderMapTable() {
             const tbody = document.getElementById('mapReportTable');
-            if (!tbody) return;
+            const thead = document.getElementById('mapTableHead');
+            if (!tbody || !thead) return;
 
-            const totalItems = data.length;
-            const totalPages = Math.ceil(totalItems / mapItemsPerPage);
-
-            if (currentMapPage > totalPages && totalPages > 0) {
-                currentMapPage = totalPages;
+            // 1. Filtering
+            let filteredData = [];
+            if (currentMapTab === 'public') {
+                filteredData = allReports.filter(item => item.report_source === 'public');
+            } else if (currentMapTab === 'sdi') {
+                filteredData = allReports.filter(item => {
+                    if (item.report_source !== 'admin') return false;
+                    const desc = (item.description || '').toUpperCase();
+                    if (desc.includes('[PCI]')) return false;
+                    if (desc.includes('[SDI]')) return true;
+                    return item.sdi_value !== null && item.sdi_value !== undefined;
+                });
+            } else if (currentMapTab === 'pci') {
+                filteredData = allReports.filter(item => {
+                    if (item.report_source !== 'admin') return false;
+                    const desc = (item.description || '').toUpperCase();
+                    if (desc.includes('[SDI]')) return false;
+                    if (desc.includes('[PCI]')) return true;
+                    return item.pci_value !== null && item.pci_value !== undefined;
+                });
+            } else if (currentMapTab === 'all') {
+                filteredData = [...allReports];
             }
 
+            if (currentMapDistrict !== 'all') {
+                filteredData = filteredData.filter(item => item.district === currentMapDistrict);
+            }
+
+            if (currentMapStatus !== 'all') {
+                filteredData = filteredData.filter(item => item.status === currentMapStatus);
+            }
+
+            // Sync Map Markers
+            if (window.renderAdminMap) {
+                renderAdminMap(filteredData);
+            }
+
+            // 2. Dynamic Headers
+            let headerHtml = '';
+            if (currentMapTab === 'sdi') {
+                headerHtml = `
+                    <tr>
+                        <th style="width: 50px;">No.</th>
+                        <th>Tanggal</th>
+                        <th style="width: 80px;">Ruas</th>
+                        <th>Kecamatan</th>
+                        <th>SDI</th>
+                        <th>Kondisi</th>
+                        <th>Status</th>
+                        <th style="text-align: center;">Aksi</th>
+                    </tr>
+                `;
+            } else if (currentMapTab === 'pci') {
+                headerHtml = `
+                    <tr>
+                        <th style="width: 50px;">No.</th>
+                        <th>Tanggal</th>
+                        <th style="width: 80px;">Ruas</th>
+                        <th>Kecamatan</th>
+                        <th>PCI</th>
+                        <th>Kondisi</th>
+                        <th>Status</th>
+                        <th style="text-align: center;">Aksi</th>
+                    </tr>
+                `;
+            } else if (currentMapTab === 'all') {
+                headerHtml = `
+                    <tr>
+                        <th style="width: 50px;">No.</th>
+                        <th>Tgl</th>
+                        <th>Sumber</th>
+                        <th>Pelapor</th>
+                        <th>Status</th>
+                        <th style="text-align: center;">Aksi</th>
+                    </tr>
+                `;
+            } else {
+                headerHtml = `
+                    <tr>
+                        <th style="width: 50px;">No.</th>
+                        <th>Tanggal</th>
+                        <th>Pelapor</th>
+                        <th>Kecamatan</th>
+                        <th>Keterangan</th>
+                        <th>Status</th>
+                        <th style="text-align: center;">Aksi</th>
+                    </tr>
+                `;
+            }
+            thead.innerHTML = headerHtml;
+
+            // 3. Pagination
+            const totalItems = filteredData.length;
+            const totalPages = Math.ceil(totalItems / mapItemsPerPage);
+            if (currentMapPage > totalPages && totalPages > 0) currentMapPage = totalPages;
+
             const startIndex = (currentMapPage - 1) * mapItemsPerPage;
-            const endIndex = startIndex + mapItemsPerPage;
-            const paginatedData = data.slice(startIndex, endIndex);
+            const paginatedData = filteredData.slice(startIndex, startIndex + mapItemsPerPage);
 
             if (paginatedData.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="7" style="text-align: center; padding: 3rem; color: #94a3b8;">
+                        <td colspan="10" style="text-align: center; padding: 3rem; color: #94a3b8;">
                             <i class="far fa-folder-open" style="font-size: 2rem; margin-bottom: 1rem; display: block;"></i>
-                            Tidak ada data untuk ditampilkan.
+                            Tidak ada data untuk filter ini.
                         </td>
                     </tr>`;
                 renderMapPagination(0, 0);
                 return;
             }
 
+            // 4. Content
             let contentHtml = '';
             paginatedData.forEach((item, index) => {
                 const rowNumber = startIndex + index + 1;
                 const dateObj = new Date(item.created_at);
-                const date = dateObj.toLocaleDateString("id-ID", {
-                    day: 'numeric', month: 'short', year: 'numeric'
-                }) + ' ' + dateObj.toLocaleTimeString("id-ID", { hour: '2-digit', minute: '2-digit' }).replace('.', ':');
+                const date = dateObj.toLocaleDateString("id-ID", { day: 'numeric', month: 'short' });
 
                 let statusBadge = '';
-                if (item.status === 'verified') statusBadge = `<span class="badge status-verified">Verified</span>`;
-                else if (item.status === 'rejected') statusBadge = `<span class="badge status-rejected">Rejected</span>`;
-                else statusBadge = `<span class="badge status-pending">Pending</span>`;
+                if (item.status === 'verified') statusBadge = `<span class="badge status-verified">V</span>`;
+                else if (item.status === 'rejected') statusBadge = `<span class="badge status-rejected">X</span>`;
+                else statusBadge = `<span class="badge status-pending">?</span>`;
 
-                const sourceText = item.report_source === 'admin' ? 'Teknis Dinas' : 'Warga';
+                if (currentMapTab === 'sdi' || currentMapTab === 'pci') {
+                    const val = currentMapTab === 'sdi' ? (item.sdi_value || 0) : (item.pci_value || 0);
+                    const cat = currentMapTab === 'sdi' ? (item.sdi_category || '-') : (item.pci_category || '-');
+                    
+                    let noRuas = '-';
+                    if (item.description && item.description.includes('Ruas #')) {
+                        noRuas = item.description.split('Ruas #')[1].split(' ')[0] || '-';
+                    }
 
-                contentHtml += `
-                    <tr>
-                        <td style="color: #64748b; font-weight: 600;">${rowNumber}</td>
-                        <td style="font-weight: 500;">${date}</td>
-                        <td><span class="badge" style="background: #f1f5f9; color: #475569; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600;">${sourceText}</span></td>
-                        <td style="font-weight: 600;">${item.reporter_name || 'Admin'}</td>
-                        <td>${item.district || '-'}</td>
-                        <td style="max-width: 250px;">
-                            <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${item.description || '-'}</div>
-                        </td>
-                        <td>${statusBadge}</td>
-                        <td style="text-align: center;">
-                            <button onclick="openActionModal(${item.id})" class="action-btn-small" style="background: white; border: 1px solid #e2e8f0; color: #3b82f6; cursor: pointer; padding: 6px 12px; border-radius: 6px;">
-                                <i class="fas fa-cog"></i>
-                            </button>
-                        </td>
-                    </tr>
-                `;
+                    contentHtml += `
+                        <tr>
+                            <td style="color: #64748b;">${rowNumber}</td>
+                            <td>${date}</td>
+                            <td style="font-weight: 700; color: #3b82f6;">${noRuas}</td>
+                            <td>${item.district}</td>
+                            <td><span class="badge badge-${currentMapTab}">${val}</span></td>
+                            <td style="font-size: 0.8rem;">${cat}</td>
+                            <td>${statusBadge}</td>
+                            <td style="text-align: center;">
+                                <button onclick="openActionModal(${item.id})" class="action-btn-small" style="padding: 4px 8px;">
+                                    <i class="fas fa-cog"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                } else if (currentMapTab === 'all') {
+                    const sourceText = item.report_source === 'admin' ? 'Admin' : 'Warga';
+                    contentHtml += `
+                        <tr>
+                            <td style="color: #64748b;">${rowNumber}</td>
+                            <td>${date}</td>
+                            <td><span class="badge" style="background: #f1f5f9; color: #475569;">${sourceText}</span></td>
+                            <td style="font-weight: 600;">${item.reporter_name || 'Admin'}</td>
+                            <td>${statusBadge}</td>
+                            <td style="text-align: center;">
+                                <button onclick="openActionModal(${item.id})" class="action-btn-small">
+                                    <i class="fas fa-cog"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                } else {
+                    contentHtml += `
+                        <tr>
+                            <td style="color: #64748b;">${rowNumber}</td>
+                            <td>${date}</td>
+                            <td style="font-weight: 600;">${item.reporter_name || 'Warga'}</td>
+                            <td>${item.district || '-'}</td>
+                            <td style="max-width: 150px; font-size: 0.85rem; color: #64748b;">
+                                <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${item.description || '-'}</div>
+                            </td>
+                            <td>${statusBadge}</td>
+                            <td style="text-align: center;">
+                                <button onclick="openActionModal(${item.id})" class="action-btn-small" style="padding: 4px 8px;">
+                                    <i class="fas fa-cog"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                }
             });
             tbody.innerHTML = contentHtml;
             renderMapPagination(totalPages, totalItems);
         }
 
         function filterAndRender() {
-            let filteredData = allReports.filter(item => item.report_source === currentTab);
+            let filteredData = [];
+            
+            if (currentTab === 'public') {
+                filteredData = allReports.filter(item => item.report_source === 'public');
+            } else if (currentTab === 'sdi') {
+                filteredData = allReports.filter(item => {
+                    const isTableAdmin = item.report_source === 'admin';
+                    const desc = (item.description || '').toUpperCase();
+                    // If it has [PCI] tag, it's definitely NOT SDI
+                    if (desc.includes('[PCI]')) return false;
+                    // If it has [SDI] tag, it's definitely SDI
+                    if (desc.includes('[SDI]')) return true;
+                    // Fallback for older data or manual entries
+                    return isTableAdmin && (item.sdi_value !== null && item.sdi_value !== undefined);
+                });
+            } else if (currentTab === 'pci') {
+                filteredData = allReports.filter(item => {
+                    const isTableAdmin = item.report_source === 'admin';
+                    const desc = (item.description || '').toUpperCase();
+                    // If it has [SDI] tag, it's definitely NOT PCI
+                    if (desc.includes('[SDI]')) return false;
+                    // If it has [PCI] tag, it's definitely PCI
+                    if (desc.includes('[PCI]')) return true;
+                    // Fallback for older data or manual entries
+                    return isTableAdmin && (item.pci_value !== null && item.pci_value !== undefined);
+                });
+            } else if (currentTab === 'all') {
+                filteredData = [...allReports];
+            }
 
             // District filter
             if (currentAdminDistrict !== 'all') {
@@ -892,7 +1117,7 @@
             if (!tbody || !thead) return;
 
             let headerHtml = '';
-            if (type === 'admin') {
+            if (type === 'sdi') {
                 headerHtml = `
                     <tr>
                         <th style="width: 50px;">No.</th>
@@ -900,11 +1125,39 @@
                         <th style="width: 100px;">No. Ruas</th>
                         <th>Kecamatan</th>
                         <th>Keterangan</th>
-                        <th>Dimensi (PxL)</th>
                         <th>Nilai SDI</th>
-                        <th>Nilai PCI</th>
+                        <th>Kondisi (SDI)</th>
                         <th>Status</th>
                         <th>Lampiran & Lokasi</th>
+                        <th style="text-align: center;">Aksi</th>
+                    </tr>
+                `;
+            } else if (type === 'pci') {
+                headerHtml = `
+                    <tr>
+                        <th style="width: 50px;">No.</th>
+                        <th>Tanggal</th>
+                        <th style="width: 100px;">No. Ruas</th>
+                        <th>Kecamatan</th>
+                        <th>Keterangan</th>
+                        <th>Nilai PCI</th>
+                        <th>Kondisi (PCI)</th>
+                        <th>Status</th>
+                        <th>Lampiran & Lokasi</th>
+                        <th style="text-align: center;">Aksi</th>
+                    </tr>
+                `;
+            } else if (type === 'all') {
+                headerHtml = `
+                    <tr>
+                        <th style="width: 50px;">No.</th>
+                        <th>Tanggal</th>
+                        <th>Sumber</th>
+                        <th>Pelapor</th>
+                        <th>Lokasi</th>
+                        <th>SDI/PCI</th>
+                        <th>Status</th>
+                        <th>Lampiran</th>
                         <th style="text-align: center;">Aksi</th>
                     </tr>
                 `;
@@ -926,11 +1179,15 @@
             thead.innerHTML = headerHtml;
 
             if (data.length === 0) {
+                let emptyMsg = 'warga';
+                if (type === 'sdi') emptyMsg = 'SDI';
+                if (type === 'pci') emptyMsg = 'PCI';
+                
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="7" style="text-align: center; padding: 3rem; color: #94a3b8;">
+                        <td colspan="10" style="text-align: center; padding: 3rem; color: #94a3b8;">
                             <i class="far fa-folder-open" style="font-size: 2rem; margin-bottom: 1rem; display: block;"></i>
-                            Tidak ada data ${type === 'admin' ? 'dinas' : 'warga'}.
+                            Tidak ada data ${emptyMsg}.
                         </td>
                     </tr>`;
                 return;
@@ -984,20 +1241,19 @@
                 attachmentHtml += `</div>`;
 
 
-                if (type === 'admin') {
+                if (type === 'sdi' || type === 'pci') {
                     const sdiVal = (item.sdi_value !== null && item.sdi_value !== undefined) ? item.sdi_value : 0;
                     const pciVal = (item.pci_value !== null && item.pci_value !== undefined) ? item.pci_value : 0;
                     
-                    const sdi = `<span class="badge badge-sdi">${sdiVal} (${item.sdi_category || '-'})</span>`;
-                    const pci = `<span class="badge badge-pci">${pciVal} (${item.pci_category || '-'})</span>`;
-                    const dims = (item.damage_length && item.damage_width) ? `${item.damage_length}m x ${item.damage_width}m` : '-';
+                    const sdi = `<span class="badge badge-sdi">${sdiVal}</span>`;
+                    const pci = `<span class="badge badge-pci">${pciVal}</span>`;
+                    const sdiCat = `<span class="badge" style="background: #f1f5f9; color: #475569;">${item.sdi_category || '-'}</span>`;
+                    const pciCat = `<span class="badge" style="background: #f1f5f9; color: #475569;">${item.pci_category || '-'}</span>`;
 
-                    // Extract No. Ruas from description if it exists (for imported data)
+                    // Extract No. Ruas from description
                     let noRuas = '-';
                     if (item.description && item.description.includes('Ruas #')) {
                         noRuas = item.description.split('Ruas #')[1].split(' ')[0] || '-';
-                    } else if (item.description && item.description.includes('LCODE:')) {
-                        noRuas = item.description.split('LCODE:')[1].split(')')[0].trim() || '-';
                     }
 
                     row = `
@@ -1011,9 +1267,34 @@
                                     ${item.description || '-'}
                                 </div>
                             </td>
-                            <td>${dims}</td>
-                            <td>${sdi}</td>
-                            <td>${pci}</td>
+                            <td>${type === 'sdi' ? sdi : pci}</td>
+                            <td>${type === 'sdi' ? sdiCat : pciCat}</td>
+                            <td>${statusBadge}</td>
+                            <td>${attachmentHtml}</td>
+                            <td style="text-align: center;">
+                                <button onclick="openActionModal(${item.id})" class="action-btn-small" style="background: white; border: 1px solid #e2e8f0; color: #3b82f6; cursor: pointer; padding: 6px 12px; border-radius: 6px;">
+                                    <i class="fas fa-cog"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                } else if (type === 'all') {
+                    const sdiVal = item.sdi_value;
+                    const pciVal = item.pci_value;
+                    const sourceText = item.report_source === 'admin' ? 'Admin' : 'Warga';
+                    
+                    let techInfo = '-';
+                    if (sdiVal !== null && sdiVal !== undefined) techInfo = `SDI: ${sdiVal}`;
+                    else if (pciVal !== null && pciVal !== undefined) techInfo = `PCI: ${pciVal}`;
+
+                    row = `
+                        <tr>
+                            <td style="color: #64748b; font-weight: 600;">${rowNumber}</td>
+                            <td style="font-weight: 500;">${date}</td>
+                            <td><span class="badge" style="background: #f1f5f9; color: #475569;">${sourceText}</span></td>
+                            <td style="font-weight: 600;">${item.reporter_name || 'Anonim'}</td>
+                            <td>${item.district || '-'}</td>
+                            <td style="font-weight: 700; color: #3b82f6;">${techInfo}</td>
                             <td>${statusBadge}</td>
                             <td>${attachmentHtml}</td>
                             <td style="text-align: center;">
