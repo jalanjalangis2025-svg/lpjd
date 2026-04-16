@@ -153,12 +153,12 @@ function getRobustProperty(props, keys, defaultValue = null) {
 async function loadClipGajahData() {
     // Clear existing layers first to ensure we aren't showing old/conflicting data
     layers.roadConditions.clearLayers();
-    
+
     // --- DISTRICT FILTERING LOGIC ---
     // If a district is selected, we only show road segments that belong to that district.
     const filterDistrict = window.currentMapDistrict || 'all';
     let validRuas = new Set();
-    
+
     if (filterDistrict !== 'all' && window.allReports) {
         window.allReports.forEach(r => {
             if (r.district === filterDistrict && r.no_ruas) {
@@ -170,17 +170,17 @@ async function loadClipGajahData() {
 
     // List of files to attempt loading (supports multiple GIS exports)
     const geojsonFiles = ['/hasilclipgajah.geojson', '/clipan.geojson', '/hasilgajahpci.geojson', '/hasildempetpci.geojson'];
-    
+
     for (const file of geojsonFiles) {
         try {
             const res = await fetch(file);
             if (!res.ok) continue;
-            
+
             const data = await res.json();
             console.log(`Successfully loaded road data from: ${file}`);
 
             const geojsonOptions = {
-                filter: function(feature) {
+                filter: function (feature) {
                     if (filterDistrict === 'all') return true;
                     // Match by No_Ruas primary key
                     const noRuas = String(getRobustProperty(feature.properties, ['No_Ruas', 'NO_RUA', 'No_Ruas_J', 'Ruas_ID'], ''));
@@ -211,7 +211,7 @@ async function loadClipGajahData() {
                             interactive: false
                         };
                     }
-                    
+
                     return {
                         color: getConditionColor(category),
                         weight: 8, // Refined thickness
@@ -223,13 +223,13 @@ async function loadClipGajahData() {
                 },
                 onEachFeature: function (feature, layer) {
                     if (currentMapConditionView === 'warga') return;
-                    
+
                     const props = feature.properties || {};
                     // Use midpoint for better popup/marker placement
-                    const coords = feature.geometry.type === 'LineString' 
+                    const coords = feature.geometry.type === 'LineString'
                         ? feature.geometry.coordinates[Math.floor(feature.geometry.coordinates.length / 2)]
                         : (feature.geometry.type === 'MultiLineString' ? feature.geometry.coordinates[0][Math.floor(feature.geometry.coordinates[0].length / 2)] : null);
-                    
+
                     if (!coords) return;
 
                     const sdiValue = getRobustProperty(props, ['SDI', 'sdi_value', 'Skor_kerus', 'Skor_Kerus', 'skor_kerus', 'SKOR'], 0);
@@ -267,7 +267,7 @@ async function loadClipGajahData() {
                         </div>
                     `;
                     const tooltipText = `<div style="font-size: 0.8rem; opacity: 0.8;">KONDISI JALAN:</div><div style="font-size: 1rem;">${sdiCategory.toUpperCase()}</div>`;
-                    
+
                     // Determine class for colored tooltip
                     let tooltipClass = 'modern-tooltip';
                     const c = sdiCategory.toLowerCase();
@@ -276,8 +276,8 @@ async function loadClipGajahData() {
                     else if (c.includes('ringan')) tooltipClass += ' ringan';
                     else if (c.includes('berat') || c.includes('rusak')) tooltipClass += ' berat';
 
-                    const tooltipOptions = { 
-                        className: tooltipClass, 
+                    const tooltipOptions = {
+                        className: tooltipClass,
                         offset: [0, -10],
                         sticky: true,
                         permanent: false, // Back to hover-only
@@ -286,15 +286,15 @@ async function loadClipGajahData() {
                     };
 
                     layer.bindTooltip(tooltipText, tooltipOptions);
-                    
+
                     // Add midpoint marker for better clicking and label positioning
                     const marker = L.marker(latLng, { icon: createModernPin(color), interactive: true });
                     marker.bindTooltip(tooltipText, tooltipOptions);
                     marker.bindPopup(popup);
                     layers.roadConditions.addLayer(marker);
 
-                     layer.bindPopup(popup);
-                    
+                    layer.bindPopup(popup);
+
                     let hoverText = '';
                     if (currentMapConditionView === 'sdi') {
                         hoverText = `SDI: ${sdiValue} (${sdiCategory})`;
@@ -306,7 +306,7 @@ async function loadClipGajahData() {
                     layer.bindTooltip(`RUAS: ${noRuas} | ${hoverText}`, { sticky: true });
                 }
             }).addTo(layers.roadConditions);
-            
+
             clipGajahLayer = true;
 
         } catch (err) {
@@ -318,7 +318,7 @@ async function loadClipGajahData() {
 function createModernPin(color, type = 'public') {
     let iconHtml = '';
     const iconStyle = 'color: white; font-size: 10px; position: absolute; top: 22px; left: 50%; transform: translateX(-50%) rotate(20deg); text-shadow: 0 1px 2px rgba(0,0,0,0.5);';
-    
+
     if (type === 'public') {
         iconHtml = `<i class="fas fa-user" style="${iconStyle}"></i>`;
     } else if (type === 'sdi') {
@@ -358,12 +358,12 @@ function createModernPin(color, type = 'public') {
 function getMarkerColor(report) {
     // Prioritize SDI/PCI category for color
     const category = (report.sdi_category || report.pci_category || '').toLowerCase();
-    
+
     if (category.includes('baik') || category.includes('bagus')) return '#22c55e'; // Hijau
     if (category.includes('sedang')) return '#eab308'; // Kuning
     if (category.includes('ringan')) return '#f97316'; // Orange
     if (category.includes('berat') || category.includes('rusak')) return '#ef4444'; // Merah
-    
+
     // Fallback to status color if category is empty
     if (report.status === 'verified') return '#22c55e';
     if (report.status === 'rejected') return '#ef4444';
@@ -423,12 +423,14 @@ function renderAdminMap(reports) {
                     </div>
                 </div>
 
+                ${type !== 'public' ? `
                 <div style="display: flex; flex-direction: column; gap: 10px;">
                     <button onclick="openActionModal(${id})" 
                         style="width: 100%; background: #3b82f6; color: white; border: none; padding: 12px; border-radius: 10px; cursor: pointer; font-weight: 700; font-size: 0.9rem; transition: all 0.2s; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); display: flex; align-items: center; justify-content: center; gap: 8px;">
                         <i class="fas fa-cog"></i> Kelola Laporan
                     </button>
-                    
+                </div>
+                ` : ''}
                     <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 5px;">
                          <span style="background: ${color}15; color: ${color}; padding: 3px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 800; border: 1px solid ${color}30;">
                             ${statusLabel}
@@ -449,7 +451,7 @@ function refreshMapSize() {
     if (adminMap) {
         setTimeout(() => {
             adminMap.invalidateSize();
-            
+
             // Sync with zoom visibility
             if (adminMap.getZoom() < 14) {
                 document.querySelectorAll('.modern-tooltip').forEach(el => el.style.display = 'none');
@@ -461,17 +463,17 @@ function refreshMapSize() {
 // Control label visibility based on zoom for Admin Map
 setTimeout(() => {
     if (adminMap) {
-        adminMap.on('zoomend', function() {
+        adminMap.on('zoomend', function () {
             const zoomSize = adminMap.getZoom();
             const tooltips = document.querySelectorAll('.modern-tooltip');
-            
+
             if (zoomSize < 14) {
                 tooltips.forEach(el => el.style.display = 'none');
             } else {
                 tooltips.forEach(el => el.style.display = 'block');
             }
         });
-        
+
         // Initial check
         if (adminMap.getZoom() < 14) {
             document.querySelectorAll('.modern-tooltip').forEach(el => el.style.display = 'none');
@@ -480,9 +482,9 @@ setTimeout(() => {
 }, 2000);
 
 
-window.setMapConditionView = function(view) {
+window.setMapConditionView = function (view) {
     currentMapConditionView = view;
-    
+
     // Update buttons
     const allBtn = document.getElementById('btn-view-all');
     const sdiBtn = document.getElementById('btn-view-sdi');
@@ -502,7 +504,7 @@ window.setMapConditionView = function(view) {
     };
 
     resetBtns();
-    
+
     if (view === 'all') {
         setActive(allBtn);
         legendTitle.innerText = "Data Semua Laporan";
@@ -547,7 +549,7 @@ window.setMapConditionView = function(view) {
         `;
         if (window.switchMapTab) window.switchMapTab('public');
     }
-    
+
     // Refresh layers
     loadClipGajahData();
 };
