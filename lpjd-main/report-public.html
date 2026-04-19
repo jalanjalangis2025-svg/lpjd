@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lapor Jalan Rusak (Warga)</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="images/lambang_kabupaten_demak.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="css/common.css">
+    <link rel="stylesheet" href="css/navbar.css">
+    <link rel="stylesheet" href="css/form.css">
+</head>
+
+<body style="opacity: 0; transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1);">
+
+    <nav class="navbar">
+        <div class="container">
+            <a href="index.html" class="brand" style="display: flex; align-items: center; gap: 8px;">
+                <img src="images/lambang_kabupaten_demak.png" alt="Logo Demak" style="height: 32px; width: auto;">
+                <span>LaporJalan <span style="font-weight: 400; font-size: 0.9em; opacity: 0.8;">| Kab.
+                        Demak</span></span>
+            </a>
+
+            <button class="menu-toggle" onclick="toggleMenu()">
+                <i class="fas fa-bars"></i>
+            </button>
+
+            <div class="nav-menu" id="navMenu">
+                <a href="index.html" class="nav-link">Beranda</a>
+                <a href="index.html#tata-cara" class="nav-link">Tata Cara</a>
+                <a href="map.html" class="nav-link">Peta Persebaran</a>
+                <a href="public-reports" class="nav-link">Laporan Warga</a>
+                <a href="report-public.html" class="nav-link active">Lapor Sekarang</a>
+
+                <div class="mobile-user-actions">
+                    <a href="home.html" class="btn-login" id="auth-btn-mobile"><i class="fas fa-lock"></i> Masuk Admin</a>
+                </div>
+            </div>
+
+            <div class="user-actions">
+                <a href="home.html" class="btn-login" id="auth-btn-desktop"><i class="fas fa-lock"></i> Masuk Admin</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="form-container" style="margin-top: calc(var(--nav-height) + 40px);">
+        <a href="index.html" class="back-link">
+            <i class="fas fa-arrow-left"></i> Kembali ke Beranda
+        </a>
+
+        <div class="form-header">
+            <h1>Lapor Jalan Rusak</h1>
+            <p>Partisipasi anda mewujudkan infrastruktur Kabupaten Demak yang lebih baik.</p>
+        </div>
+
+        <div class="form-card">
+            <form id="reportForm">
+
+                <!-- Section 1: Pelapor -->
+                <div class="form-section">
+                    <h3 class="section-title"><i class="fas fa-user"></i> Informasi Pelapor</h3>
+
+                    <div class="form-group">
+                        <label>Nama Lengkap</label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-user-circle"></i>
+                            <input type="text" id="reporter_name" placeholder="Contoh: Budi Santoso" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Kontak (WhatsApp/Telp)</label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-phone"></i>
+                            <input type="tel" id="reporter_contact" placeholder="08xxxxxxxxxx" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Tanggal Laporan</label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-calendar-alt"></i>
+                            <input type="text" id="report_date_display" readonly
+                                style="background-color: #f1f5f9; cursor: not-allowed;">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 2: Lokasi & Detail -->
+                <div class="form-section">
+                    <h3 class="section-title"><i class="fas fa-map-marked-alt"></i> Detail Lokasi</h3>
+
+                    <div class="form-group">
+                        <label>Kecamatan</label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-city"></i>
+                            <select id="district" required>
+                                <option value="">Pilih Kecamatan...</option>
+                                <option value="Bonang">Bonang</option>
+                                <option value="Demak">Demak</option>
+                                <option value="Dempet">Dempet</option>
+                                <option value="Gajah">Gajah</option>
+                                <option value="Guntur">Guntur</option>
+                                <option value="Karanganyar">Karanganyar</option>
+                                <option value="Karangawen">Karangawen</option>
+                                <option value="Karangtengah">Karangtengah</option>
+                                <option value="Kebonagung">Kebonagung</option>
+                                <option value="Mijen">Mijen</option>
+                                <option value="Mranggen">Mranggen</option>
+                                <option value="Sayung">Sayung</option>
+                                <option value="Wedung">Wedung</option>
+                                <option value="Wonosalam">Wonosalam</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Titik Koordinat</label>
+                        <button type="button" onclick="getLocation()" class="btn-primary"
+                            style="margin-bottom: 10px; font-size: 1rem;">
+                            <i class="fas fa-location-crosshairs"></i> Ambil Lokasi Saya
+                        </button>
+                        <span id="location-status"></span>
+
+                        <div class="details-grid" style="margin-top: 15px; grid-template-columns: 1fr 1fr; gap: 12px;">
+                            <div class="input-with-icon">
+                                <i class="fas fa-map-pin" style="color: var(--danger);"></i>
+                                <input type="number" id="latitude" placeholder="Latitude" step="any" readonly required>
+                            </div>
+                            <div class="input-with-icon">
+                                <i class="fas fa-map-pin" style="color: var(--danger);"></i>
+                                <input type="number" id="longitude" placeholder="Longitude" step="any" readonly
+                                    required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Deskripsi Kerusakan</label>
+                        <textarea id="description" rows="4"
+                            placeholder="Jelaskan kondisi jalan secara singkat. Contoh: Berlubang dalam di tengah jalan..."
+                            required></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Foto Bukti</label>
+                        <div class="file-upload-box">
+                            <input type="file" id="photo" accept="image/*" capture="environment"
+                                onclick="checkLocationBeforePhoto(event)"
+                                onchange="previewImage(this)">
+                            <div class="upload-placeholder">
+                                <i class="fas fa-camera"></i>
+                                <span>Klik untuk ambil foto atau pilih dari galeri</span>
+                            </div>
+                        </div>
+                        <img id="imagePreview" class="preview-image">
+                    </div>
+
+                    <div class="form-group" style="margin-top: 15px;">
+                        <p style="color: var(--danger); font-size: 0.9em; font-weight: 600; margin-top: 10px;">
+                            <i class="fas fa-info-circle"></i> *Foto bukti harus diambil secara realtime di lokasi kejadian untuk validitas data koordinat dan waktu.
+                        </p>
+                    </div>
+                </div>
+
+                <button type="submit" id="submitBtn" class="btn-primary">
+                    <i class="fas fa-paper-plane"></i> Kirim Laporan
+                </button>
+
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase.js"></script>
+    <script src="js/report.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            document.body.style.opacity = '1';
+            
+            // Check auth status
+            if (window.sb) {
+                const { data: { session } } = await sb.auth.getSession();
+                if (session) {
+                    const mobileBtn = document.getElementById('auth-btn-mobile');
+                    const desktopBtn = document.getElementById('auth-btn-desktop');
+                    
+                    if (mobileBtn) mobileBtn.innerHTML = '<i class="fas fa-chart-pie"></i> Dashboard';
+                    if (desktopBtn) desktopBtn.innerHTML = '<i class="fas fa-chart-pie"></i> Dashboard';
+                }
+            }
+        });
+
+        function toggleMenu() {
+            const menu = document.getElementById('navMenu');
+            menu.classList.toggle('active');
+        }
+
+        function checkLocationBeforePhoto(e) {
+            const lat = document.getElementById('latitude').value;
+            const lng = document.getElementById('longitude').value;
+
+            if (!lat || !lng) {
+                e.preventDefault();
+                alert("Silakan klik 'Ambil Lokasi Saya' terlebih dahulu sebelum mengambil foto agar data koordinat tersimpan.");
+            }
+        }
+
+        async function previewImage(input) {
+            if (input.files && input.files[0]) {
+                const preview = document.getElementById('imagePreview');
+                const file = input.files[0];
+                
+                // Show temporary loading or status
+                const status = document.getElementById('location-status');
+                const originalStatus = status ? status.innerText : "";
+                if (status) status.innerText = "Memproses watermark...";
+
+                try {
+                    const watermarkedBlob = await processImageWithWatermark(file);
+                    const objectUrl = URL.createObjectURL(watermarkedBlob);
+                    
+                    preview.src = objectUrl;
+                    preview.style.display = 'block';
+                    preview.classList.add('fade-in');
+                    
+                    if (status) status.innerText = originalStatus || "Foto siap!";
+                } catch (err) {
+                    console.error("Preview processing failed:", err);
+                    // Fallback to original
+                    var reader = new FileReader();
+                    reader.onload = function (e) {
+                        preview.src = e.target.result;
+                        preview.style.display = 'block';
+                    }
+                    reader.readAsDataURL(file);
+                    if (status) status.innerText = "Gagal watermark, menampilkan foto asli.";
+                }
+            }
+        }
+    </script>
+</body>
+
+</html>

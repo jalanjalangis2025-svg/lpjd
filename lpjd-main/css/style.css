@@ -1,0 +1,248 @@
+:root {
+    /* Color Palette */
+    --primary: #2563eb;
+    /* Royal Blue */
+    --primary-hover: #1d4ed8;
+    --secondary: #f8fafc;
+    /* Slate 50 */
+    --text-main: #1e293b;
+    /* Slate 800 */
+    --text-light: #64748b;
+    /* Slate 500 */
+    --danger: #ef4444;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --surface: #ffffff;
+
+    /* Spacing & Borders */
+    --radius: 0.5rem;
+    --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background-color: var(--secondary);
+    color: var(--text-main);
+    margin: 0;
+    line-height: 1.6;
+}
+
+h1,
+h2,
+h3 {
+    margin-top: 0;
+    color: var(--text-main);
+}
+
+a {
+    color: var(--primary);
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* Layout Containers */
+.container {
+    max-width: 1000px;
+    margin: 40px auto;
+    padding: 0 20px;
+}
+
+/* Cards */
+.card {
+    background: var(--surface);
+    padding: 30px;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    margin-bottom: 20px;
+}
+
+/* Center Content (for Login) */
+.center-screen {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+.login-card {
+    width: 100%;
+    max-width: 400px;
+}
+
+/* Buttons */
+.btn,
+button {
+    display: inline-block;
+    padding: 10px 20px;
+    border: none;
+    border-radius: var(--radius);
+    background-color: var(--primary);
+    color: white;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.1s;
+    text-align: center;
+    text-decoration: none;
+}
+
+.btn:hover,
+button:hover {
+    background-color: var(--primary-hover);
+    text-decoration: none;
+}
+
+.btn:active,
+button:active {
+    transform: translateY(1px);
+}
+
+.btn-secondary {
+    background-color: var(--surface);
+    color: var(--primary);
+    border: 1px solid var(--primary);
+}
+
+.btn-secondary:hover {
+    background-color: #eff6ff;
+}
+
+.btn-danger,
+.btn-logout {
+    background-color: var(--danger);
+    color: white;
+}
+
+.btn-danger:hover,
+.btn-logout:hover {
+    background-color: #dc2626;
+}
+
+.btn-process {
+    background-color: var(--success);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 0.9em;
+}
+
+/* Forms */
+.form-group {
+    margin-bottom: 15px;
+}
+
+label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="date"],
+select,
+textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: var(--radius);
+    font-size: 1rem;
+    font-family: inherit;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* Tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--surface);
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    margin-top: 20px;
+}
+
+th,
+td {
+    padding: 15px;
+    text-align: left;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+th {
+    background-color: #f1f5f9;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+tr:last-child td {
+    border-bottom: none;
+}
+
+/* Navbar / Links */
+.nav-links {
+    margin: 20px 0;
+    display: flex;
+    gap: 15px;
+}
+
+.nav-links a {
+    padding: 8px 16px;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    color: var(--text-main);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.nav-links a:hover {
+    color: var(--primary);
+    background: #f8fafc;
+}
+
+/* Maps */
+#map {
+    width: 100%;
+    height: 600px;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    z-index: 1;
+}
+
+/* Status Badges within Table */
+.status-pending {
+    color: var(--warning);
+    font-weight: bold;
+}
+
+.status-verified {
+    color: var(--success);
+    font-weight: bold;
+}
+
+/* Utilities */
+.text-center {
+    text-align: center;
+}
+
+.mt-4 {
+    margin-top: 1.5rem;
+}

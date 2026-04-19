@@ -1,0 +1,1241 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="images/lambang_kabupaten_demak.png">
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <link rel="stylesheet" href="css/common.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/map.css">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <!-- Export Libs -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+
+<body style="opacity: 0; transition: opacity 0.5s;">
+    <!-- Global Loader (Init Active) -->
+    <div class="page-loader active" id="mainLoader">
+        <div class="spinner"></div>
+        <div class="loader-text">Memuat Dashboard...</div>
+    </div>
+
+    <!-- Logout Confirmation Modal -->
+    <div class="modal-overlay glass-modal" id="logoutModal"
+        style="display: none; opacity: 0; transition: opacity 0.3s;">
+        <div class="modal-content glass-content">
+            <div style="font-size: 3rem; color: #ef4444; margin-bottom: 20px;">
+                <i class="fas fa-sign-out-alt"></i>
+            </div>
+            <h2 style="margin-bottom: 10px; color: #1e293b;">Yakin ingin keluar?</h2>
+            <p style="color: #64748b; margin-bottom: 30px;">Anda perlu login kembali untuk mengakses panel admin.</p>
+
+            <div style="display: flex; gap: 15px; justify-content: center;">
+                <button onclick="closeLogoutModal()" class="btn-confirm-no">Batal</button>
+                <button onclick="processLogout()" class="btn-confirm-yes">Ya, Keluar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navbar -->
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+            <div class="brand" style="display: flex; align-items: center; gap: 8px;">
+                <img src="images/lambang_kabupaten_demak.png" alt="Logo Demak" style="height: 32px; width: auto;"> Admin Panel
+            </div>
+            <button class="menu-toggle" onclick="toggleMenu()">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+
+        <div class="nav-menu" id="navMenu">
+            <a onclick="switchView('dashboard'); toggleMenu()" class="nav-item active" id="nav-dashboard">
+                <i class="fas fa-home"></i> Dashboard
+            </a>
+            <a onclick="switchView('map'); toggleMenu()" class="nav-item" id="nav-map">
+                <i class="fas fa-map"></i> Maps
+            </a>
+            <a onclick="switchView('reports'); switchReportTab('public'); toggleMenu()" class="nav-item" id="nav-public-reports">
+                <i class="fas fa-users"></i> Laporan Warga
+            </a>
+            <a onclick="switchView('reports'); switchReportTab('admin'); toggleMenu()" class="nav-item" id="nav-reports">
+                <i class="fas fa-hard-hat"></i> Data Teknis
+            </a>
+            <a onclick="switchView('print'); toggleMenu()" class="nav-item" id="nav-print">
+                <i class="fas fa-print"></i> Cetak Laporan
+            </a>
+            <button onclick="confirmLogout()" class="btn-logout" style="margin-left: 10px;">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </button>
+        </div>
+    </nav>
+
+    <!-- Global Loader (Hidden by default) -->
+    <div class="page-loader">
+        <div class="spinner"></div>
+        <div class="loader-text">Logging out...</div>
+    </div>
+
+    <script>
+        async function logoutWithEffect() {
+            const loader = document.querySelector('.page-loader');
+            if (loader) loader.classList.add('active');
+
+            // Artificial delay for smooth UX
+            await new Promise(r => setTimeout(r, 800));
+
+            if (window.sb) {
+                await sb.auth.signOut();
+            }
+
+            window.location.href = '/index.html';
+        }
+        window.logout = logoutWithEffect;
+    </script>
+
+    <div class="container">
+
+        <!-- DASHBOARD VIEW -->
+        <div id="dashboard-view" class="view-section active">
+            <h2 style="margin-bottom: 20px;">Ringkasan Statistik</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon blue">
+                        <i class="fas fa-clipboard-list"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="statTotal">0</h3>
+                        <p>Total Laporan Masuk</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon yellow">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="statPending">0</h3>
+                        <p>Menunggu Verifikasi</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon green">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="statVerified">0</h3>
+                        <p>Laporan Terverifikasi</p>
+                    </div>
+                </div>
+            </div>
+
+            <div
+                style="margin-top: 40px; background: white; padding: 2rem; border-radius: 12px; border: 1px solid #e2e8f0;">
+                <h3><i class="fas fa-info-circle"></i> Informasi Admin</h3>
+                <p style="color: #64748b; margin-top: 10px;">
+                    Selamat datang di Panel Admin. Gunakan menu <strong>"Data Laporan"</strong> yang ada di atas untuk
+                    mengelola laporan masuk.
+                    Anda juga dapat melihat dan mengelola sebaran laporan di menu <strong>"Maps"</strong>.
+                </p>
+            </div>
+        </div>
+
+        <!-- MAP VIEW -->
+        <div id="map-view" class="view-section">
+            <h2 style="margin-bottom: 20px;">Maps Admin (Kelola Data)</h2>
+            <div class="map-wrapper" style="position: relative;">
+                <div id="admin-map"
+                    style="height: 500px; width: 100%; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 30px;">
+                </div>
+
+                <!-- Floating Legend Admin -->
+                <div class="legend-card" id="adminMapLegend" style="bottom: 50px; right: 20px;">
+                    <h3><i class="fas fa-layer-group"></i> Legenda Peta</h3>
+                    
+                    <div class="legend-section">
+                        <h4 class="legend-section-title">Kondisi Jalan (SDI)</h4>
+                        <div class="legend-item">
+                            <span class="line-legend bagus"></span>
+                            <span style="color: #15803d; font-weight: 800;">Bagus (0-50)</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="line-legend sedang"></span>
+                            <span style="color: #a16207; font-weight: 800;">Sedang (50-100)</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="line-legend ringan"></span>
+                            <span style="color: #c2410c; font-weight: 800;">Rusak Ringan (100-150)</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="line-legend berat"></span>
+                            <span style="color: #b91c1c; font-weight: 800;">Rusak Berat (>150)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Table for Map View -->
+            <div class="actions-toolbar">
+                <div style="font-weight: 700; font-size: 1.2rem;">Data Laporan di Peta</div>
+            </div>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 50px;">No.</th>
+                            <th>Tanggal</th>
+                            <th>Sumber</th>
+                            <th>Pelapor</th>
+                            <th>Lokasi</th>
+                            <th>Keterangan</th>
+                            <th>Status</th>
+                            <th style="text-align: center;">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="mapReportTable">
+                        <tr>
+                            <td colspan="7" style="text-align: center; padding: 3rem; color: #94a3b8;">
+                                <i class="fas fa-circle-notch fa-spin"></i> Memuat data...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div id="mapReportsPagination" class="pagination">
+                <!-- Pagination Rendered by JS -->
+            </div>
+        </div>
+
+        <!-- REPORTS VIEW -->
+        <div id="reports-view" class="view-section">
+            <div class="actions-toolbar">
+                <div style="font-weight: 700; font-size: 1.2rem;">Manajemen Data</div>
+
+                <div style="display: flex; gap: 15px;">
+                    <button class="action-btn btn-primary" onclick="window.location.href='/report-admin'">
+                        <i class="fas fa-plus"></i> Input Manual
+                    </button>
+                    <button class="action-btn" style="background: #8b5cf6; color: white;" onclick="document.getElementById('geoJsonInput').click()">
+                        <i class="fas fa-file-import"></i> Bulk Import GeoJSON
+                    </button>
+                    <input type="file" id="geoJsonInput" accept=".geojson,.json" style="display: none;" onchange="handleGeoJsonImport(this)">
+                    <button class="action-btn btn-secondary" onclick="window.open('/map', '_blank')">
+                        <i class="fas fa-map"></i> Lihat Peta
+                    </button>
+                </div>
+            </div>
+
+            <div class="tabs"
+                style="display: flex; justify-content: space-between; align-items: center; width: 100%; flex-wrap: wrap; gap: 15px;">
+                <div style="display: flex; gap: 10px;">
+                    <button class="tab-btn active" id="tab-public" onclick="switchReportTab('public')">
+                        <i class="fas fa-users"></i> Laporan Warga
+                    </button>
+                    <button class="tab-btn" id="tab-admin" onclick="switchReportTab('admin')">
+                        <i class="fas fa-hard-hat"></i> Data Teknis Dinas
+                    </button>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <label style="font-size: 0.9rem; color: #64748b; font-weight: 600;">Filter Kecamatan:</label>
+                    <select id="adminDistrictFilter" onchange="setAdminDistrictFilter(this.value)"
+                        style="padding: 8px 12px; border-radius: 8px; border: 1px solid #e2e8f0; font-family: inherit; font-size: 0.9rem; color: #1e293b; outline: none; cursor: pointer;">
+                        <option value="all">Semua Kecamatan</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead id="tableHead">
+                        <!-- Dynamic Headers -->
+                    </thead>
+                    <tbody id="reportTable">
+                        <tr>
+                            <td colspan="7" style="text-align: center; padding: 3rem; color: #94a3b8;">
+                                <i class="fas fa-circle-notch fa-spin"></i> Memuat data...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div id="reportsPagination" class="pagination">
+                <!-- Pagination Rendered by JS -->
+            </div>
+        </div>
+
+        <!-- PRINT VIEW -->
+        <div id="print-view" class="view-section">
+            <div class="actions-toolbar">
+                <div style="font-weight: 700; font-size: 1.2rem;">Cetak Laporan</div>
+            </div>
+
+            <div
+                style="background: white; padding: 2rem; border-radius: 12px; border: 1px solid #e2e8f0; max-width: 800px; margin: 0 auto;">
+                <h3 style="margin-bottom: 2rem; border-bottom: 1px solid #f1f5f9; padding-bottom: 1rem;">Konfigurasi
+                    Ekspor</h3>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 30px;">
+                    <div class="form-group">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 500;">Sumber Data</label>
+                        <select id="exportSource"
+                            style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1;">
+                            <option value="all">Semua Data</option>
+                            <option value="public">Laporan Warga</option>
+                            <option value="admin">Data Teknis Dinas</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 500;">Status Laporan</label>
+                        <select id="exportStatus"
+                            style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1;">
+                            <option value="all">Semua Status</option>
+                            <option value="pending">Menunggu Verifikasi</option>
+                            <option value="verified">Terverifikasi</option>
+                            <option value="rejected">Ditolak</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 500;">Kecamatan</label>
+                        <select id="exportDistrict"
+                            style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1;">
+                            <option value="all">Semua Kecamatan</option>
+                            <!-- Options will be populated by JS -->
+                        </select>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 15px; justify-content: flex-end;">
+                    <button onclick="exportToExcel()"
+                        style="display: flex; align-items: center; gap: 8px; padding: 12px 24px; background: #10b981; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: transform 0.2s;">
+                        <i class="fas fa-file-excel"></i> Export Excel
+                    </button>
+                    <button onclick="exportToPDF()"
+                        style="display: flex; align-items: center; gap: 8px; padding: 12px 24px; background: #ef4444; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: transform 0.2s;">
+                        <i class="fas fa-file-pdf"></i> Export PDF
+                    </button>
+                </div>
+
+                <div
+                    style="margin-top: 30px; padding: 15px; background: #f8fafc; border-radius: 8px; border-left: 4px solid #3b82f6;">
+                    <p style="font-size: 0.9rem; color: #475569;">
+                        <i class="fas fa-info-circle"></i>
+                        Data yang diekspor akan sesuai dengan filter yang dipilih di atas. Pastikan data sudah termuat
+                        sebelum melakukan ekspor.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Action Modal (Clean White) -->
+    <style>
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            background: #f1f5f9;
+            padding: 5px;
+            border-radius: 8px;
+            width: fit-content;
+        }
+
+        .tab-btn {
+            padding: 10px 20px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            border-radius: 6px;
+            font-weight: 600;
+            color: #64748b;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            background: white;
+            color: #0f172a;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .badge-sdi {
+            background: #e0f2fe;
+            color: #0284c7;
+        }
+
+        .badge-pci {
+            background: #f0fdf4;
+            color: #16a34a;
+        }
+
+        /* Pagination Styles */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-top: 20px;
+            padding: 10px;
+        }
+
+        .btn-page {
+            padding: 6px 12px;
+            border: 1px solid #cbd5e1;
+            background: white;
+            color: #475569;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+        }
+
+        .btn-page:hover:not(:disabled) {
+            border-color: #3b82f6;
+            color: #3b82f6;
+            background: #f8fafc;
+        }
+
+        .btn-page:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .page-info {
+            color: #64748b;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+    </style>
+    <div class="modal-overlay" id="actionModal">
+        <div class="modal-content">
+            <button class="btn-modal-close"
+                style="position: absolute; top: 15px; right: 15px; background:none; border:none; font-size: 1.2rem; cursor: pointer;"
+                onclick="closeModal()">
+                <i class="fas fa-times"></i>
+            </button>
+            <div style="text-align: center; padding: 2rem;">
+                <div style="font-size: 3rem; color: #3b82f6; margin-bottom: 1rem;">
+                    <i class="fas fa-cog"></i>
+                </div>
+                <h2 class="modal-title" style="margin-bottom: 0.5rem;">Kelola Laporan</h2>
+                <p class="modal-desc" id="modalDesc" style="margin-bottom: 2rem;">Pilih tindakan untuk laporan ini.</p>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <button onclick="performAction('verify')"
+                        style="padding: 12px; border-radius: 8px; border: none; background: #10b981; color: white; cursor: pointer; font-weight: 600;">
+                        <i class="fas fa-check"></i> Verifikasi
+                    </button>
+                    <button onclick="performAction('reject')"
+                        style="padding: 12px; border-radius: 8px; border: 1px solid #ef4444; background: white; color: #ef4444; cursor: pointer; font-weight: 600;">
+                        <i class="fas fa-times"></i> Tolak
+                    </button>
+                    <button onclick="performAction('process')"
+                        style="padding: 12px; border-radius: 8px; border: 1px solid #3b82f6; background: white; color: #3b82f6; cursor: pointer; font-weight: 600;">
+                        <i class="fas fa-edit"></i> Edit
+                    </button>
+                    <button onclick="performAction('delete')"
+                        style="padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; background: #f1f5f9; color: #64748b; cursor: pointer; font-weight: 600;">
+                        <i class="fas fa-trash"></i> Hapus
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Progress Modal for Import -->
+    <div class="modal-overlay" id="importModal" style="z-index: 10000; background: rgba(0,0,0,0.8);">
+        <div class="modal-content" style="max-width: 500px; text-align: center; padding: 2.5rem;">
+            <div id="importSpinner" style="font-size: 3.5rem; color: #8b5cf6; margin-bottom: 1.5rem;">
+                <i class="fas fa-circle-notch fa-spin"></i>
+            </div>
+            <h2 id="importTitle" style="margin-bottom: 0.5rem; color: #1e293b;">Mengimport Data...</h2>
+            <p id="importStatus" style="color: #64748b; margin-bottom: 1.5rem; font-size: 1.1rem;">Menyiapkan file GeoJSON</p>
+            
+            <div style="width: 100%; height: 10px; background: #e2e8f0; border-radius: 5px; overflow: hidden; margin-bottom: 1.5rem;">
+                <div id="importProgress" style="width: 0%; height: 100%; background: #8b5cf6; transition: width 0.3s ease;"></div>
+            </div>
+            
+            <div id="importStats" style="font-size: 0.9rem; color: #94a3b8;">
+                Berhasil: <span id="importSuccessCount">0</span> | Gagal: <span id="importErrorCount">0</span>
+            </div>
+            
+            <button id="closeImportBtn" onclick="closeImportModal()" class="btn-primary" style="margin-top: 2rem; display: none; width: 100%;">Tutup</button>
+        </div>
+    </div>
+
+    <!-- Image Modal -->
+    <div class="modal-overlay" id="imageModal" style="z-index: 9999; background: rgba(0,0,0,0.9);">
+        <div class="modal-content"
+            style="background: transparent; box-shadow: none; max-width: 90vw; max-height: 90vh; width: auto; padding: 0;">
+            <button class="btn-modal-close"
+                style="position: absolute; top: -40px; right: 0; color: white; background: none; border: none; font-size: 2rem; cursor: pointer;"
+                onclick="closeImageModal()">
+                <i class="fas fa-times"></i>
+            </button>
+            <img id="previewImage" src=""
+                style="max-width: 100%; max-height: 80vh; border-radius: 8px; border: 2px solid white;">
+            <div style="text-align: center; margin-top: 15px;">
+                <a id="downloadLink" href="#" target="_blank" download
+                    style="color: white; text-decoration: none; border: 1px solid white; padding: 8px 16px; border-radius: 20px;">
+                    <i class="fas fa-download"></i> Unduh Gambar Asli
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/supabase.js"></script>
+    <script src="js/guard.js"></script>
+    <script src="https://unpkg.com/@turf/turf/turf.min.js"></script>
+    <script src="js/import.js"></script>
+    <script src="js/admin-map.js"></script>
+    <script>
+        let allReports = [];
+        let selectedReportId = null;
+        let currentTab = 'public'; // 'public' or 'admin'
+        let currentAdminDistrict = 'all';
+        let currentAdminPage = 1;
+        const adminItemsPerPage = 10;
+        let currentMapPage = 1;
+        const mapItemsPerPage = 10;
+
+        const districts = [
+            "Mranggen", "Karangawen", "Guntur", "Sayung", "Karangtengah",
+            "Bonang", "Demak", "Wonosalam", "Dempet", "Kebonagung",
+            "Gajah", "Karanganyar", "Mijen", "Wedung"
+        ];
+
+        // Dashboard Entry Logic
+        document.addEventListener('DOMContentLoaded', () => {
+            // Init: Fade in body
+            document.body.style.opacity = '1';
+
+            // Populate Filters
+            populateAdminFilters();
+
+            // Populate Export Districts
+            const exportSelect = document.getElementById('exportDistrict');
+            if (exportSelect) {
+                districts.sort().forEach(d => {
+                    const opt = document.createElement('option');
+                    opt.value = d;
+                    opt.textContent = d;
+                    exportSelect.appendChild(opt);
+                });
+            }
+
+            // Load Data & Handle Loader
+            loadReports().then(() => {
+                setTimeout(() => {
+                    const loader = document.getElementById('mainLoader');
+                    if (loader) {
+                        loader.classList.remove('active');
+                        setTimeout(() => loader.remove(), 500);
+                    }
+                }, 800); // Minimum display time for effect
+            });
+        });
+
+        // Logout Flow
+        function confirmLogout() {
+            const modal = document.getElementById('logoutModal');
+            if (modal) {
+                modal.style.display = 'flex';
+                // force reflow
+                modal.offsetHeight;
+                modal.style.opacity = '1';
+                modal.classList.add('active');
+            }
+        }
+
+        function closeLogoutModal() {
+            const modal = document.getElementById('logoutModal');
+            if (modal) {
+                modal.style.opacity = '0';
+                modal.classList.remove('active');
+                setTimeout(() => modal.style.display = 'none', 300);
+            }
+        }
+
+        async function processLogout() {
+            closeLogoutModal();
+
+            // Re-use loader for exit transition
+            let loader = document.getElementById('mainLoader');
+            if (!loader) {
+                loader = document.createElement('div');
+                loader.className = 'page-loader';
+                loader.id = 'mainLoader';
+                loader.innerHTML = '<div class="spinner"></div><div class="loader-text">Logging out...</div>';
+                document.body.appendChild(loader);
+            } else {
+                // Should not happen if removed, but just in case
+                // If mainLoader was removed, recreate it. If element exists but hidden/removed from DOM?
+                // The previous code removes it from DOM. So we likely need to create or re-append if variable held ref.
+                // Safest is create new if null.
+            }
+
+            // If loader was removed from DOM, getElementById returns null.
+            if (!document.getElementById('mainLoader')) {
+                loader = document.createElement('div');
+                loader.className = 'page-loader';
+                loader.id = 'mainLoader';
+                loader.innerHTML = '<div class="spinner"></div><div class="loader-text">Logging out...</div>';
+                document.body.appendChild(loader);
+            } else {
+                loader = document.getElementById('mainLoader');
+                loader.querySelector('.loader-text').innerText = "Logging out...";
+            }
+
+            // Force reflow and active
+            loader.offsetHeight;
+            loader.classList.add('active');
+
+            await new Promise(r => setTimeout(r, 1000));
+
+            if (window.sb) {
+                await sb.auth.signOut();
+            }
+            window.location.href = '/index.html';
+        }
+
+        function toggleMenu() {
+            const menu = document.getElementById('navMenu');
+            menu.classList.toggle('active');
+        }
+
+        // View Switcher Logic
+        function switchView(viewName) {
+            // Update Menu Active State
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            
+            if (viewName === 'reports') {
+                if (currentTab === 'public') {
+                    document.getElementById('nav-public-reports').classList.add('active');
+                } else {
+                    document.getElementById('nav-reports').classList.add('active');
+                }
+            } else {
+                document.getElementById(`nav-${viewName}`).classList.add('active');
+            }
+
+            // Toggle Sections
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            document.getElementById(`${viewName}-view`).classList.add('active');
+
+            // Fix map size if switching to map
+            if (viewName === 'map') {
+                if (window.renderAdminMap) {
+                    renderAdminMap(allReports);
+                }
+                refreshMapSize();
+            }
+        }
+
+        function switchReportTab(type) {
+            currentTab = type;
+            currentAdminPage = 1; // Reset page
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`tab-${type}`).classList.add('active');
+            // Update Navbar Active State
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            if (type === 'public') {
+                document.getElementById('nav-public-reports').classList.add('active');
+            } else {
+                document.getElementById('nav-reports').classList.add('active');
+            }
+            filterAndRender();
+        }
+
+        function populateAdminFilters() {
+            const select = document.getElementById('adminDistrictFilter');
+            districts.sort().forEach(d => {
+                const opt = document.createElement('option');
+                opt.value = d;
+                opt.textContent = d;
+                select.appendChild(opt);
+            });
+        }
+
+        function setAdminDistrictFilter(val) {
+            currentAdminDistrict = val;
+            currentAdminPage = 1; // Reset page
+            filterAndRender();
+        }
+
+        async function loadReports() {
+            if (!window.sb) {
+                setTimeout(loadReports, 500);
+                return;
+            }
+
+            try {
+                let allData = [];
+                let from = 0;
+                let to = 999;
+                let finished = false;
+
+                // Loop to fetch all records (1000 per batch)
+                while (!finished) {
+                    const { data, error } = await sb
+                        .from('road_reports')
+                        .select('*')
+                        .is('deleted_at', null)
+                        .order('created_at', { ascending: false })
+                        .range(from, to);
+
+                    if (error) throw error;
+
+                    if (data && data.length > 0) {
+                        allData = allData.concat(data);
+                        if (data.length < 1000) {
+                            finished = true; // Last batch
+                        } else {
+                            from += 1000;
+                            to += 1000;
+                        }
+                    } else {
+                        finished = true;
+                    }
+                }
+
+                allReports = allData;
+                updateStats();
+                filterAndRender();
+                renderMapTable(allReports);
+
+                if (window.renderAdminMap) {
+                    renderAdminMap(allReports);
+                }
+            } catch (err) {
+                console.error("Gagal memuat laporan:", err);
+            }
+        }
+
+        function updateStats() {
+            document.getElementById('statTotal').innerText = allReports.length;
+            document.getElementById('statPending').innerText = allReports.filter(r => r.status === 'pending').length;
+            document.getElementById('statVerified').innerText = allReports.filter(r => r.status === 'verified').length;
+        }
+
+        function renderMapPagination(totalPages, totalItems) {
+            const paginationEl = document.getElementById('mapReportsPagination');
+            if (!paginationEl) return;
+            if (totalItems <= mapItemsPerPage) {
+                paginationEl.innerHTML = totalItems > 0 ? `<div class="page-info">Total ${totalItems} data</div>` : '';
+                return;
+            }
+
+            paginationEl.innerHTML = `
+                <button class="btn-page" onclick="changeMapPage(1)" ${currentMapPage === 1 ? 'disabled' : ''}>
+                    <i class="fas fa-angle-double-left"></i>
+                </button>
+                <button class="btn-page" onclick="changeMapPage(${currentMapPage - 1})" ${currentMapPage === 1 ? 'disabled' : ''}>
+                    <i class="fas fa-angle-left"></i>
+                </button>
+                <div class="page-info">Halaman ${currentMapPage} dari ${totalPages} (${totalItems} data)</div>
+                <button class="btn-page" onclick="changeMapPage(${currentMapPage + 1})" ${currentMapPage === totalPages ? 'disabled' : ''}>
+                    <i class="fas fa-angle-right"></i>
+                </button>
+                <button class="btn-page" onclick="changeMapPage(${totalPages})" ${currentMapPage === totalPages ? 'disabled' : ''}>
+                    <i class="fas fa-angle-double-right"></i>
+                </button>
+            `;
+        }
+
+        function changeMapPage(page) {
+            currentMapPage = page;
+            renderMapTable(allReports);
+        }
+
+        function renderMapTable(data) {
+            const tbody = document.getElementById('mapReportTable');
+            if (!tbody) return;
+
+            const totalItems = data.length;
+            const totalPages = Math.ceil(totalItems / mapItemsPerPage);
+
+            if (currentMapPage > totalPages && totalPages > 0) {
+                currentMapPage = totalPages;
+            }
+
+            const startIndex = (currentMapPage - 1) * mapItemsPerPage;
+            const endIndex = startIndex + mapItemsPerPage;
+            const paginatedData = data.slice(startIndex, endIndex);
+
+            if (paginatedData.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 3rem; color: #94a3b8;">
+                            <i class="far fa-folder-open" style="font-size: 2rem; margin-bottom: 1rem; display: block;"></i>
+                            Tidak ada data untuk ditampilkan.
+                        </td>
+                    </tr>`;
+                renderMapPagination(0, 0);
+                return;
+            }
+
+            let contentHtml = '';
+            paginatedData.forEach((item, index) => {
+                const rowNumber = startIndex + index + 1;
+                const dateObj = new Date(item.created_at);
+                const date = dateObj.toLocaleDateString("id-ID", {
+                    day: 'numeric', month: 'short', year: 'numeric'
+                }) + ' ' + dateObj.toLocaleTimeString("id-ID", { hour: '2-digit', minute: '2-digit' }).replace('.', ':');
+
+                let statusBadge = '';
+                if (item.status === 'verified') statusBadge = `<span class="badge status-verified">Verified</span>`;
+                else if (item.status === 'rejected') statusBadge = `<span class="badge status-rejected">Rejected</span>`;
+                else statusBadge = `<span class="badge status-pending">Pending</span>`;
+
+                const sourceText = item.report_source === 'admin' ? 'Teknis Dinas' : 'Warga';
+
+                contentHtml += `
+                    <tr>
+                        <td style="color: #64748b; font-weight: 600;">${rowNumber}</td>
+                        <td style="font-weight: 500;">${date}</td>
+                        <td><span class="badge" style="background: #f1f5f9; color: #475569; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600;">${sourceText}</span></td>
+                        <td style="font-weight: 600;">${item.reporter_name || 'Admin'}</td>
+                        <td>${item.district || '-'}</td>
+                        <td style="max-width: 250px;">
+                            <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${item.description || '-'}</div>
+                        </td>
+                        <td>${statusBadge}</td>
+                        <td style="text-align: center;">
+                            <button onclick="openActionModal(${item.id})" class="action-btn-small" style="background: white; border: 1px solid #e2e8f0; color: #3b82f6; cursor: pointer; padding: 6px 12px; border-radius: 6px;">
+                                <i class="fas fa-cog"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = contentHtml;
+            renderMapPagination(totalPages, totalItems);
+        }
+
+        function filterAndRender() {
+            let filteredData = allReports.filter(item => item.report_source === currentTab);
+
+            // District filter
+            if (currentAdminDistrict !== 'all') {
+                filteredData = filteredData.filter(item => item.district === currentAdminDistrict);
+            }
+
+            // Pagination logic
+            const totalItems = filteredData.length;
+            const totalPages = Math.ceil(totalItems / adminItemsPerPage);
+
+            if (currentAdminPage > totalPages && totalPages > 0) {
+                currentAdminPage = totalPages;
+            }
+
+            const startIndex = (currentAdminPage - 1) * adminItemsPerPage;
+            const endIndex = startIndex + adminItemsPerPage;
+            const paginatedData = filteredData.slice(startIndex, endIndex);
+
+            renderTable(paginatedData, currentTab);
+            renderAdminPagination(totalPages, totalItems);
+        }
+
+        function renderAdminPagination(totalPages, totalItems) {
+            const paginationEl = document.getElementById('reportsPagination');
+            if (totalItems <= adminItemsPerPage) {
+                paginationEl.innerHTML = totalItems > 0 ? `<div class="page-info">Total ${totalItems} data</div>` : '';
+                return;
+            }
+
+            paginationEl.innerHTML = `
+                <button class="btn-page" onclick="changeAdminPage(1)" ${currentAdminPage === 1 ? 'disabled' : ''}>
+                    <i class="fas fa-angle-double-left"></i>
+                </button>
+                <button class="btn-page" onclick="changeAdminPage(${currentAdminPage - 1})" ${currentAdminPage === 1 ? 'disabled' : ''}>
+                    <i class="fas fa-angle-left"></i>
+                </button>
+                <div class="page-info">Halaman ${currentAdminPage} dari ${totalPages} (${totalItems} data)</div>
+                <button class="btn-page" onclick="changeAdminPage(${currentAdminPage + 1})" ${currentAdminPage === totalPages ? 'disabled' : ''}>
+                    <i class="fas fa-angle-right"></i>
+                </button>
+                <button class="btn-page" onclick="changeAdminPage(${totalPages})" ${currentAdminPage === totalPages ? 'disabled' : ''}>
+                    <i class="fas fa-angle-double-right"></i>
+                </button>
+            `;
+        }
+
+        function changeAdminPage(page) {
+            currentAdminPage = page;
+            filterAndRender();
+        }
+
+        function renderTable(data, type) {
+            const tbody = document.getElementById('reportTable');
+            const thead = document.getElementById('tableHead');
+            if (!tbody || !thead) return;
+
+            let headerHtml = '';
+            if (type === 'admin') {
+                headerHtml = `
+                    <tr>
+                        <th style="width: 50px;">No.</th>
+                        <th>Tanggal</th>
+                        <th style="width: 100px;">No. Ruas</th>
+                        <th>Kecamatan</th>
+                        <th>Keterangan</th>
+                        <th>Dimensi (PxL)</th>
+                        <th>Nilai SDI</th>
+                        <th>Nilai PCI</th>
+                        <th>Status</th>
+                        <th>Lampiran & Lokasi</th>
+                        <th style="text-align: center;">Aksi</th>
+                    </tr>
+                `;
+            } else {
+                headerHtml = `
+                    <tr>
+                        <th style="width: 50px;">No.</th>
+                        <th>Tanggal</th>
+                        <th>Pelapor</th>
+                        <th>Kontak</th>
+                        <th>Lokasi</th>
+                        <th>Keterangan</th>
+                        <th>Status</th>
+                         <th>Lampiran & Lokasi</th>
+                        <th style="text-align: center;">Aksi</th>
+                    </tr>
+                `;
+            }
+            thead.innerHTML = headerHtml;
+
+            if (data.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 3rem; color: #94a3b8;">
+                            <i class="far fa-folder-open" style="font-size: 2rem; margin-bottom: 1rem; display: block;"></i>
+                            Tidak ada data ${type === 'admin' ? 'dinas' : 'warga'}.
+                        </td>
+                    </tr>`;
+                return;
+            }
+
+            let contentHtml = '';
+            const startIndex = (currentAdminPage - 1) * adminItemsPerPage;
+
+            data.forEach((item, index) => {
+                const rowNumber = startIndex + index + 1;
+                const dateObj = new Date(item.created_at);
+                const date = dateObj.toLocaleDateString("id-ID", {
+                    day: 'numeric', month: 'short', year: 'numeric'
+                }) + ' ' + dateObj.toLocaleTimeString("id-ID", { hour: '2-digit', minute: '2-digit' }).replace('.', ':');
+
+                let statusBadge = '';
+                if (item.status === 'verified') statusBadge = `<span class="badge status-verified">Verified</span>`;
+                else if (item.status === 'rejected') statusBadge = `<span class="badge status-rejected">Rejected</span>`;
+                else statusBadge = `<span class="badge status-pending">Pending</span>`;
+
+                let row = '';
+
+                // Attachment & Location Column
+                let attachmentHtml = `<div style="display: flex; flex-direction: column; gap: 5px;">`;
+
+                // Photo
+                if (item.photo_url) {
+                    // Trigger async size fetch
+                    getImageSize(item.photo_url, `size-${item.id}`);
+
+                    attachmentHtml += `
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <button onclick="showImage('${item.photo_url}')" style="border: 1px solid #cbd5e1; background: white; border-radius: 6px; padding: 4px 8px; cursor: pointer; display: flex; align-items: center; gap: 5px; font-size: 0.85rem;">
+                                <i class="fas fa-image" style="color: #3b82f6;"></i> Lihat Foto
+                            </button>
+                            <span id="size-${item.id}" style="font-size: 0.75rem; color: #64748b; min-width: 45px;">...</span>
+                        </div>
+                    `;
+                } else {
+                    attachmentHtml += `<span style="font-size: 0.8rem; color: #94a3b8; font-style: italic;">Tanpa Foto</span>`;
+                }
+
+                // Map
+                if (item.latitude && item.longitude) {
+                    attachmentHtml += `
+                        <button onclick="openMap(${item.latitude}, ${item.longitude})" style="width: fit-content; border: 1px solid #cbd5e1; background: white; border-radius: 6px; padding: 4px 8px; cursor: pointer; display: flex; align-items: center; gap: 5px; font-size: 0.85rem; margin-top: 4px;">
+                            <i class="fas fa-map-marker-alt" style="color: #ef4444;"></i> Lihat Peta
+                        </button>
+                    `;
+                }
+                attachmentHtml += `</div>`;
+
+
+                if (type === 'admin') {
+                    const sdiVal = (item.sdi_value !== null && item.sdi_value !== undefined) ? item.sdi_value : 0;
+                    const pciVal = (item.pci_value !== null && item.pci_value !== undefined) ? item.pci_value : 0;
+                    
+                    const sdi = `<span class="badge badge-sdi">${sdiVal} (${item.sdi_category || '-'})</span>`;
+                    const pci = `<span class="badge badge-pci">${pciVal} (${item.pci_category || '-'})</span>`;
+                    const dims = (item.damage_length && item.damage_width) ? `${item.damage_length}m x ${item.damage_width}m` : '-';
+
+                    // Extract No. Ruas from description if it exists (for imported data)
+                    let noRuas = '-';
+                    if (item.description && item.description.includes('Ruas #')) {
+                        noRuas = item.description.split('Ruas #')[1].split(' ')[0] || '-';
+                    } else if (item.description && item.description.includes('LCODE:')) {
+                        noRuas = item.description.split('LCODE:')[1].split(')')[0].trim() || '-';
+                    }
+
+                    row = `
+                        <tr>
+                            <td style="color: #64748b; font-weight: 600;">${rowNumber}</td>
+                            <td style="font-weight: 500;">${date}</td>
+                            <td style="font-weight: 700; color: #3b82f6;">${noRuas}</td>
+                            <td>${item.district}</td>
+                            <td style="max-width: 200px;">
+                                <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 0.9rem; color: #64748b;" title="${item.description || '-'}">
+                                    ${item.description || '-'}
+                                </div>
+                            </td>
+                            <td>${dims}</td>
+                            <td>${sdi}</td>
+                            <td>${pci}</td>
+                            <td>${statusBadge}</td>
+                            <td>${attachmentHtml}</td>
+                            <td style="text-align: center;">
+                                <button onclick="openActionModal(${item.id})" class="action-btn-small" style="background: white; border: 1px solid #e2e8f0; color: #3b82f6; cursor: pointer; padding: 6px 12px; border-radius: 6px;">
+                                    <i class="fas fa-cog"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                } else {
+                    row = `
+                        <tr>
+                            <td style="color: #64748b; font-weight: 600;">${rowNumber}</td>
+                            <td style="font-weight: 500;">${date}</td>
+                            <td style="font-weight: 600;">${item.reporter_name || 'Anonim'}</td>
+                            <td style="font-size: 0.8em; color: #64748b;">${item.reporter_contact || '-'}</td>
+                            <td>${item.district}</td>
+                            <td style="max-width: 250px;">
+                                <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${item.description || '-'}</div>
+                            </td>
+                            <td>${statusBadge}</td>
+                            <td>${attachmentHtml}</td>
+                            <td style="text-align: center;">
+                                <button onclick="openActionModal(${item.id})" class="action-btn-small" style="background: white; border: 1px solid #e2e8f0; color: #3b82f6; cursor: pointer; padding: 6px 12px; border-radius: 6px;">
+                                    <i class="fas fa-cog"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                }
+                contentHtml += row;
+            });
+            tbody.innerHTML = contentHtml;
+        }
+
+        function openActionModal(id) {
+            selectedReportId = id;
+            const report = allReports.find(r => r.id === id);
+            document.getElementById('modalDesc').innerText = `Laporan di ${report.district} oleh ${report.reporter_name || 'Admin'}`;
+            document.getElementById('actionModal').classList.add('active');
+            document.getElementById('actionModal').style.display = 'flex';
+            document.getElementById('actionModal').style.opacity = '1';
+        }
+
+        function closeModal() {
+            document.getElementById('actionModal').style.display = 'none';
+            document.getElementById('actionModal').style.opacity = '0';
+            selectedReportId = null;
+        }
+
+        async function performAction(action) {
+            if (!selectedReportId) return;
+
+            const id = selectedReportId;
+            let updateData = {};
+
+            if (action === 'verify') updateData = { status: 'verified' };
+            else if (action === 'reject') updateData = { status: 'rejected' };
+            else if (action === 'process') {
+                window.location.href = `/report-admin?id=${id}`;
+                return;
+            } else if (action === 'delete') {
+                if (!confirm("Hapus data ini? (Data akan dipindahkan ke sampah)")) return;
+                const { error } = await sb.from('road_reports').update({ deleted_at: new Date() }).eq('id', id);
+                if (!error) { closeModal(); loadReports(); }
+                return;
+            }
+
+            const { error } = await sb.from('road_reports').update(updateData).eq('id', id);
+            if (!error) { closeModal(); loadReports(); }
+        }
+
+        // --- Export Functions --- //
+
+        function getFilteredDataForExport() {
+            const source = document.getElementById('exportSource').value;
+            const status = document.getElementById('exportStatus').value;
+            const district = document.getElementById('exportDistrict').value;
+
+            return allReports.filter(item => {
+                const matchSource = (source === 'all') ? true : (item.report_source === source);
+                const matchStatus = (status === 'all') ? true : (item.status === status);
+                const matchDistrict = (district === 'all') ? true : (item.district === district);
+                return matchSource && matchStatus && matchDistrict;
+            });
+        }
+
+        function exportToExcel() {
+            const data = getFilteredDataForExport();
+            if (data.length === 0) {
+                alert("Tidak ada data yang sesuai filter untuk diekspor!");
+                return;
+            }
+
+            // Map data to readable format
+            const exportData = data.map(item => {
+                const dateObj = new Date(item.created_at);
+                const dateStr = dateObj.toLocaleDateString("id-ID") + ' ' + dateObj.toLocaleTimeString("id-ID", { hour: '2-digit', minute: '2-digit' }).replace('.', ':');
+
+                return {
+                    "Tanggal & Jam": dateStr,
+                    "Sumber": item.report_source === 'admin' ? 'Teknis Dinas' : 'Laporan Warga',
+                    "Pelapor": item.reporter_name || '-',
+                    "Kecamatan": item.district || '-',
+                    "Deskripsi/Keterangan": item.description || '-',
+                    "Nilai SDI": (item.sdi_value !== null && item.sdi_value !== undefined) ? item.sdi_value : 0,
+                    "Nilai PCI": (item.pci_value !== null && item.pci_value !== undefined) ? item.pci_value : 0,
+                    "Status": item.status
+                };
+            });
+
+            const ws = XLSX.utils.json_to_sheet(exportData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Laporan");
+
+            // Save file
+            const filename = `Laporan_Jalan_${new Date().toISOString().slice(0, 10)}.xlsx`;
+            XLSX.writeFile(wb, filename);
+        }
+
+        function exportToPDF() {
+            const data = getFilteredDataForExport();
+            if (data.length === 0) {
+                alert("Tidak ada data yang sesuai filter untuk diekspor!");
+                return;
+            }
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            // Title
+            doc.setFontSize(18);
+            doc.text("Laporan Data Jalan", 14, 22);
+            doc.setFontSize(11);
+            doc.text(`Dicetak pada: ${new Date().toLocaleDateString("id-ID")}`, 14, 30);
+
+            // Prepare Table Data
+            const tableColumn = ["Tanggal", "Sumber", "Pelapor", "Kecamatan", "Ket.", "Status"];
+            const tableRows = [];
+
+            data.forEach(item => {
+                const dateObj = new Date(item.created_at);
+                const dateStr = dateObj.toLocaleDateString("id-ID") + ' ' + dateObj.toLocaleTimeString("id-ID", { hour: '2-digit', minute: '2-digit' }).replace('.', ':');
+
+                const reportData = [
+                    dateStr,
+                    item.report_source === 'admin' ? 'Dinas' : 'Warga',
+                    item.reporter_name || 'Admin',
+                    item.district || '-',
+                    (item.description || '-').substring(0, 30) + (item.description && item.description.length > 30 ? '...' : ''),
+                    item.status
+                ];
+                tableRows.push(reportData);
+            });
+
+            // Generate Table
+            doc.autoTable({
+                head: [tableColumn],
+                body: tableRows,
+                startY: 40,
+                styles: { fontSize: 8 },
+                headStyles: { fillColor: [59, 130, 246] } // Blue header
+            });
+
+            doc.save(`Laporan_Jalan_${new Date().toISOString().slice(0, 10)}.pdf`);
+        }
+
+        // --- Attachment / Map Utilities --- //
+
+        function openMap(lat, lng) {
+            if (!lat || !lng) return;
+            const url = `https://www.google.com/maps?q=${lat},${lng}`;
+            window.open(url, '_blank');
+        }
+
+        function showImage(url) {
+            const modal = document.getElementById('imageModal');
+            const img = document.getElementById('previewImage');
+            const dl = document.getElementById('downloadLink');
+
+            img.src = url;
+            dl.href = url;
+
+            modal.style.display = 'flex';
+            modal.offsetHeight; // reflow
+            modal.style.opacity = '1';
+            modal.classList.add('active');
+        }
+
+        function closeImageModal() {
+            const modal = document.getElementById('imageModal');
+            modal.style.opacity = '0';
+            modal.classList.remove('active');
+            setTimeout(() => {
+                modal.style.display = 'none';
+                document.getElementById('previewImage').src = '';
+            }, 300);
+        }
+
+        async function getImageSize(url, elementId) {
+            try {
+                // Determine if it is a Supabase Storage URL
+                // If the URL is public, we can just do a HEAD request
+                const response = await fetch(url, { method: 'HEAD' });
+                if (response.ok) {
+                    const sizeBytes = response.headers.get('content-length');
+                    if (sizeBytes) {
+                        const sizeMB = (parseInt(sizeBytes) / (1024 * 1024)).toFixed(2);
+                        const el = document.getElementById(elementId);
+                        if (el) el.innerText = `${sizeMB} MB`;
+                    } else {
+                        const el = document.getElementById(elementId);
+                        if (el) el.innerText = `Unknown`;
+                    }
+                }
+            } catch (e) {
+                console.warn("Could not fetch image size for", url, e);
+                const el = document.getElementById(elementId);
+                if (el) el.innerText = `Error`;
+            }
+        }
+    </script>
+</body>
+
+</html>

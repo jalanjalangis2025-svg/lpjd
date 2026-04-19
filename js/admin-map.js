@@ -133,10 +133,25 @@ function getConditionColor(condition) {
 }
 
 function getPciCategory(value) {
-    if (value >= 85) return 'Bagus';
-    if (value >= 70) return 'Sedang';
-    if (value >= 55) return 'Rusak Ringan';
-    return 'Rusak Berat';
+    if (value >= 85) return 'Good';
+    if (value >= 70) return 'Satisfactory';
+    if (value >= 55) return 'Fair';
+    if (value >= 40) return 'Poor';
+    if (value >= 25) return 'Very Poor';
+    if (value >= 10) return 'Serious';
+    return 'Failed';
+}
+
+function getPciColor(category) {
+    const c = (category || '').toLowerCase();
+    if (c === 'good') return '#22c55e';
+    if (c === 'satisfactory') return '#84cc16';
+    if (c === 'fair') return '#eab308';
+    if (c === 'poor') return '#f97316';
+    if (c === 'very poor') return '#f43f5e';
+    if (c === 'serious') return '#ef4444';
+    if (c === 'failed') return '#7f1d1d';
+    return '#94a3b8'; // Default
 }
 
 function getRobustProperty(props, keys, defaultValue = null) {
@@ -212,14 +227,23 @@ async function loadClipGajahData() {
                         };
                     }
 
+                    let color = '#94a3b8';
+                    if (currentMapConditionView === 'sdi') {
+                        color = getConditionColor(category);
+                    } else if (currentMapConditionView === 'pci') {
+                        color = getPciColor(category);
+                    }
+
                     return {
-                        color: getConditionColor(category),
+                        color: color,
                         weight: 8, // Refined thickness
                         opacity: 1,
                         lineCap: 'round',
                         lineJoin: 'round',
                         interactive: true
                     };
+
+
                 },
                 onEachFeature: function (feature, layer) {
                     if (currentMapConditionView === 'warga') return;
@@ -238,7 +262,8 @@ async function loadClipGajahData() {
                     const noRuas = getRobustProperty(props, ['No_Ruas', 'NO_RUA', 'No_Ruas_J', 'Ruas_ID'], '-');
                     const name = getRobustProperty(props, ['Name', 'Nama_Ruas', 'NAMRUA', 'Keterangan'], 'Tanpa Nama');
 
-                    const color = getConditionColor(sdiCategory);
+                    const color = currentMapConditionView === 'pci' ? getPciColor(getPciCategory(pciValue)) : getConditionColor(sdiCategory);
+
                     const latLng = [coords[1], coords[0]];
 
                     const popup = `
@@ -531,12 +556,16 @@ window.setMapConditionView = function (view) {
         legendTitle.innerText = "Kondisi Jalan (PCI)";
         legendSection.innerHTML = `
             <h4 class="legend-section-title">Kondisi Jalan (PCI)</h4>
-            <div class="legend-item"><span class="line-legend bagus"></span><span style="color: #15803d; font-weight: 800;">Sangat Baik (80-100)</span></div>
-            <div class="legend-item"><span class="line-legend sedang"></span><span style="color: #a16207; font-weight: 800;">Baik (60-80)</span></div>
-            <div class="legend-item"><span class="line-legend ringan"></span><span style="color: #c2410c; font-weight: 800;">Kurang (40-60)</span></div>
-            <div class="legend-item"><span class="line-legend berat"></span><span style="color: #b91c1c; font-weight: 800;">Hancur (<40)</span></div>
+            <div class="legend-item"><span class="line-legend" style="background: #22c55e;"></span><span style="color: #16a34a; font-weight: 800;">Good (85-100)</span></div>
+            <div class="legend-item"><span class="line-legend" style="background: #84cc16;"></span><span style="color: #65a30d; font-weight: 800;">Satisfactory (70-85)</span></div>
+            <div class="legend-item"><span class="line-legend" style="background: #eab308;"></span><span style="color: #ca8a04; font-weight: 800;">Fair (55-70)</span></div>
+            <div class="legend-item"><span class="line-legend" style="background: #f97316;"></span><span style="color: #ea580c; font-weight: 800;">Poor (40-55)</span></div>
+            <div class="legend-item"><span class="line-legend" style="background: #f43f5e;"></span><span style="color: #e11d48; font-weight: 800;">Very Poor (25-40)</span></div>
+            <div class="legend-item"><span class="line-legend" style="background: #ef4444;"></span><span style="color: #dc2626; font-weight: 800;">Serious (10-25)</span></div>
+            <div class="legend-item"><span class="line-legend" style="background: #7f1d1d;"></span><span style="color: #7f1d1d; font-weight: 800;">Failed (0-10)</span></div>
         `;
         if (window.switchMapTab) window.switchMapTab('pci');
+
 
     } else if (view === 'warga') {
         setActive(wargaBtn);

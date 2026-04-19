@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Peta Sebaran Jalan Rusak</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="images/lambang_kabupaten_demak.png">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="css/map.css">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body class="map-page-body">
+    <!-- Main Workspace Background (With soft gradient in CSS) -->
+    <div class="workspace-wrapper">
+        <!-- Floating Pill Navigation (Left) -->
+        <div class="nav-pill-horizontal animate-float">
+            <a href="/" class="pill-item btn-icon" title="Kembali">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            
+            <div class="pill-divider"></div>
+
+            <div class="pill-item select-container">
+                <i class="fas fa-city sm-icon"></i>
+                <select id="districtFilter" onchange="applyFilters()">
+                    <option value="">Semua Kecamatan</option>
+                </select>
+            </div>
+
+            <div class="pill-item select-container">
+                <i class="fas fa-filter sm-icon"></i>
+                <select id="statusFilter" onchange="applyFilters()">
+                    <option value="all">Semua Status (Pin)</option>
+                    <option value="verified">Terverifikasi</option>
+                    <option value="pending">Menunggu</option>
+                    <option value="rejected">Ditolak</option>
+                </select>
+            </div>
+
+            <div class="pill-item btn-action-blue">
+                <i class="fas fa-map-marked-alt"></i> Peta Demak
+            </div>
+        </div>
+
+        <!-- Central Map Canvas (Rounded) -->
+        <div class="map-canvas-container">
+            <div id="map"></div>
+        </div>
+
+        <!-- Floating Legend (Right) -->
+        <div class="legend-card-glass" id="mapLegend">
+            <div class="legend-header">
+                <i class="fas fa-layer-group"></i> <span>LEGENDA PETA</span>
+            </div>
+            
+            <div class="legend-section">
+                <div class="legend-title">STATUS LAPORAN (PIN)</div>
+                <div class="legend-item-v2">
+                    <span class="indicator teal"></span>
+                    <span>Terverifikasi</span>
+                </div>
+                <div class="legend-item-v2">
+                    <span class="indicator orange"></span>
+                    <span>Menunggu</span>
+                </div>
+                <div class="legend-item-v2">
+                    <span class="indicator red"></span>
+                    <span>Ditolak</span>
+                </div>
+            </div>
+
+            <div class="legend-divider"></div>
+
+            <div class="legend-section">
+                <div class="legend-title">WILAYAH</div>
+                <div class="legend-item-v2">
+                    <span class="indicator-outline demak"></span>
+                    <span>Kabupaten Demak</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load Scripts -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase.js"></script>
+    <script src="js/map.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,29 @@
+{
+    "rewrites": [
+        {
+            "source": "/map",
+            "destination": "/map.html"
+        },
+        {
+            "source": "/report-public",
+            "destination": "/report-public.html"
+        },
+        {
+            "source": "/report-admin",
+            "destination": "/report-admin.html"
+        },
+        {
+            "source": "/login",
+            "destination": "/login.html"
+        },
+        {
+            "source": "/home",
+            "destination": "/home.html"
+        },
+        {
+            "source": "/",
+            "destination": "/index.html"
+        }
+    ],
+    "cleanUrls": true
+}

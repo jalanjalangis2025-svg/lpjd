@@ -1,0 +1,171 @@
+/* Unified Navbar Design System - Cloned from landing.css */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+    --nav-bg: #0056b3;
+    /* Classic Government Blue */
+    --nav-text: #ffffff;
+    --nav-accent: #facc15;
+    /* Golden Yellow */
+    --nav-height: 70px;
+}
+
+.navbar {
+    height: var(--nav-height);
+    background-color: var(--nav-bg);
+    color: var(--nav-text);
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    font-family: 'Inter', sans-serif;
+}
+
+.navbar .container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 100%;
+}
+
+.brand {
+    font-size: 1.25rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--nav-text);
+    text-decoration: none;
+}
+
+.brand i {
+    font-size: 1.5rem;
+    color: var(--nav-accent);
+}
+
+.nav-menu {
+    display: flex;
+    gap: 30px;
+    align-items: center;
+}
+
+.nav-link {
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 500;
+    font-size: 0.95rem;
+    text-decoration: none;
+    transition: color 0.2s;
+    line-height: var(--nav-height);
+    display: block;
+}
+
+.nav-link:hover {
+    color: var(--nav-text);
+}
+
+.nav-link.active {
+    color: var(--nav-text);
+    border-bottom: 2px solid var(--nav-accent);
+}
+
+.user-actions {
+    display: flex;
+    align-items: center;
+}
+
+.user-actions .btn-login {
+    background-color: rgba(255, 255, 255, 0.15);
+    color: var(--nav-text);
+    padding: 8px 20px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background-color 0.2s;
+}
+
+.user-actions .btn-login:hover {
+    background-color: rgba(255, 255, 255, 0.25);
+}
+
+.menu-toggle {
+    display: none;
+    background: transparent;
+    border: none;
+    color: var(--nav-text);
+    font-size: 1.5rem;
+    cursor: pointer;
+}
+
+.mobile-user-actions {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .menu-toggle {
+        display: block;
+    }
+
+    .user-actions {
+        display: none;
+    }
+
+    .nav-menu {
+        display: none;
+        width: 100%;
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 1rem 20px;
+        gap: 15px;
+        background-color: var(--nav-bg);
+        position: absolute;
+        top: var(--nav-height);
+        left: 0;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        z-index: 1000;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .nav-menu.active {
+        display: flex;
+    }
+
+    .nav-link {
+        width: 100%;
+        line-height: normal;
+        padding: 10px 0;
+    }
+
+    .nav-link.active {
+        border-bottom: none;
+        color: var(--nav-accent);
+    }
+
+    .mobile-user-actions {
+        display: block;
+        width: 100%;
+        margin-top: 10px;
+    }
+
+    .mobile-user-actions .btn-login {
+        display: block;
+        text-align: center;
+        background-color: var(--nav-accent);
+        color: #333;
+        padding: 12px;
+        border-radius: 4px;
+        font-weight: 700;
+        text-decoration: none;
+    }
+}
