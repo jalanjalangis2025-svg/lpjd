@@ -29,6 +29,7 @@ const layers = {
 };
 
 let clipGajahLayer = null;
+let currentMapConditionView = 'pci'; // Default to PCI as requested
 const mapContainer = document.getElementById('map');
 
 const districtColors = {
@@ -251,13 +252,7 @@ async function loadMapData() {
     allReports = data || [];
     populateDistrictFilter();
     
-    // Road segments (clip gajah) disabled for public map per user request
-    /*
-    if (!clipGajahLayer) {
-        await loadClipGajahData();
-        layers.roadConditions.addTo(map);
-    }
-    */
+    // Hanya memuat marker public, jangan memuat layer GeoJSON khusus Admin map (PCI/SDI)
     
     applyFilters();
 }
@@ -280,11 +275,73 @@ function populateDistrictFilter() {
 
 function getConditionColor(condition) {
     const c = (condition || '').toLowerCase();
-    if (c.includes('bagus') || c.includes('baik')) return '#22c55e'; // Green
-    if (c.includes('sedang')) return '#eab308'; // Yellow
+    if (c === 'tidak rusak' || c === 'bagus' || c === 'excellent') return '#0000FF'; // Blue for perfect
+    if (c.includes('bagus') || c.includes('baik') || c.includes('good')) return '#22c55e'; // Green
+    if (c.includes('sedang') || c.includes('fair')) return '#eab308'; // Yellow
     if (c.includes('ringan')) return '#f97316'; // Orange
-    if (c.includes('berat') || c.includes('rusak')) return '#ef4444'; // Red
+    if (c.includes('berat') || c.includes('rusak') || c.includes('poor') || c.includes('very poor') || c.includes('failed')) return '#ef4444'; // Red
     return '#94a3b8'; // Grey default
+}
+
+function getPciCategory(score, semanticLabel = '') {
+    if (score === null || score === undefined) return 'Unknown';
+    const s = parseFloat(score);
+    if (isNaN(s)) return 'Unknown';
+    if (s === 0) return 'Tidak Rusak';
+
+    const label = (semanticLabel || '').toLowerCase();
+    const isBadLabel = label.includes('rusak') || label.includes('poor') || label.includes('failed') || label.includes('berat') || label.includes('sering');
+    const isGoodLabel = label.includes('bagus') || label.includes('baik') || label.includes('good') || label.includes('excellent') || label.includes('satisfactory');
+
+    // Handle SDI/PCI ambiguity: if score > 70 but label says damaged, it is SDI (high=bad)
+    if (s > 70 && isBadLabel) return 'Serious';
+    if (s < 50 && isGoodLabel && s > 0) return 'Excellent';
+
+    if (s >= 85) return 'Excellent';
+    if (s >= 70) return 'Satisfactory';
+    if (s >= 55) return 'Fair';
+    if (s >= 40) return 'Poor';
+    if (s >= 10) return 'Serious';
+    if (s >= 1) return 'Failed';
+    return 'Failed';
+}
+
+function getPciColor(category) {
+    const c = (category || '').toLowerCase();
+    if (c === 'tidak rusak') return '#0000FF'; // Pure Blue as requested
+    if (c === 'excellent') return '#008000'; // Hijau Tua
+    if (c === 'satisfactory') return '#90EE90'; // Hijau Muda
+    if (c === 'fair') return '#FFFF00'; // Kuning
+    if (c === 'poor') return '#FFA500'; // Oranye
+    if (c === 'serious') return '#FF0000'; // Merah
+    if (c === 'failed') return '#8B0000'; // Merah Gelap
+    return '#94a3b8'; // Default Grey
+}
+
+function getRobustPci(props) {
+    // 1. Find the score
+    let rawVal = getRobustProperty(props, [
+        'PCI_Index', 'Skor_Kerus', 'Skor_kerus', 'pci_value', 'PCI', 'PCI_Score', 'Score', 'Nilai_PCI', 'PCI_Score_1', 'PCI_Value'
+    ], null);
+
+    if (rawVal === null || rawVal === undefined) return { score: null, category: 'Unknown' };
+
+    let score = parseFloat(rawVal);
+    if (isNaN(score)) return { score: null, category: 'Unknown' };
+
+    // 2. Handle Scaling (e.g. 9025 instead of 90.25)
+    if (score > 150) score = score / 100;
+
+    // 3. Normalize score to 2 decimal places
+    score = Math.round(score * 100) / 100;
+
+    // 4. Get Semantic context for SDI/PCI ambiguity
+    const semanticLabel = getRobustProperty(props, ['Jenis_keru', 'Jenis_ke_1', 'kondisi', 'kondisi_jalan', 'status', 'Keterangan'], '');
+
+    return {
+        score: score,
+        category: getPciCategory(score, semanticLabel)
+    };
 }
 
 function getRobustProperty(props, keys, defaultValue = null) {
@@ -316,7 +373,7 @@ async function loadClipGajahData() {
     layers.roadConditions.clearLayers();
     
     // List of files to attempt loading (supports multiple GIS exports)
-    const geojsonFiles = ['/hasilclipgajah.geojson', '/clipan.geojson'];
+    const geojsonFiles = ['hasilclipgajah.geojson', 'clipan.geojson', 'hasildempetpci.geojson', 'hasilgajahpci.geojson'];
 
     for (const file of geojsonFiles) {
         try {
@@ -344,9 +401,19 @@ async function loadClipGajahData() {
             // 2. Main Condition Layer (Colored top)
             L.geoJSON(data, {
                 style: function (feature) {
-                    const sdiCategory = getRobustProperty(feature.properties, ['SDI_Category', 'Jenis_keru', 'Jenis_ke_1', 'jenis_keru', 'Kondisi', 'kondisi'], 'Unknown');
+                    let category = 'Unknown';
+                    let color = '#94a3b8';
+
+                    if (currentMapConditionView === 'pci') {
+                        const pciData = getRobustPci(feature.properties);
+                        color = getPciColor(pciData.category);
+                    } else {
+                        category = getRobustProperty(feature.properties, ['SDI_Category', 'Jenis_keru', 'Jenis_ke_1', 'jenis_keru', 'Kondisi', 'kondisi'], 'Unknown');
+                        color = getConditionColor(category);
+                    }
+
                     return {
-                        color: getConditionColor(sdiCategory),
+                        color: color,
                         weight: 8, // Refined thickness
                         opacity: 1,
                         lineCap: 'round',
@@ -356,6 +423,9 @@ async function loadClipGajahData() {
                 },
                 onEachFeature: function (feature, layer) {
                     const props = feature.properties || {};
+                    const pciData = getRobustPci(props);
+                    if (!feature.geometry || !feature.geometry.coordinates) return;
+                    
                     const coords = feature.geometry.type === 'LineString' 
                         ? feature.geometry.coordinates[Math.floor(feature.geometry.coordinates.length / 2)]
                         : (feature.geometry.type === 'MultiLineString' ? feature.geometry.coordinates[0][Math.floor(feature.geometry.coordinates[0].length / 2)] : null);
@@ -364,12 +434,22 @@ async function loadClipGajahData() {
 
                     const sdiValue = getRobustProperty(props, ['SDI', 'sdi_value', 'Skor_kerus', 'Skor_Kerus', 'skor_kerus', 'SKOR'], 0);
                     const sdiCategory = getRobustProperty(props, ['SDI_Category', 'Jenis_keru', 'Jenis_ke_1', 'jenis_keru', 'Kondisi', 'kondisi'], 'Unknown');
-                    const pciValue = getRobustProperty(props, ['PCI', 'pci_value', 'PCI_Index'], 0);
                     const noRuas = getRobustProperty(props, ['No_Ruas', 'NO_RUA', 'No_Ruas_J', 'Ruas_ID'], '-');
                     const name = getRobustProperty(props, ['Name', 'Nama_Ruas', 'NAMRUA', 'Keterangan'], 'Tanpa Nama');
-
+                    
                     const latLng = [coords[1], coords[0]];
-                    const color = getConditionColor(sdiCategory);
+                    
+                    let color = '#94a3b8';
+                    let displayCategory = 'Unknown';
+                    
+                    if (currentMapConditionView === 'pci') {
+                        color = getPciColor(pciData.category);
+                        displayCategory = pciData.category;
+                    } else {
+                        color = getConditionColor(sdiCategory);
+                        displayCategory = sdiCategory;
+                    }
+
                     const marker = L.marker(latLng, { 
                         icon: createModernPin(color),
                         interactive: true 
@@ -379,7 +459,7 @@ async function loadClipGajahData() {
                         <div style="font-family: 'Plus Jakarta Sans', sans-serif; min-width: 260px; padding: 5px;">
                             <div style="font-weight: 800; color: #1e293b; margin-bottom: 5px; font-size: 1.15rem; line-height: 1.2;">${name}</div>
                             <div style="display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap;">
-                                 <span style="background: ${color}15; color: ${color}; padding: 3px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; border: 1px solid ${color}30;">${sdiCategory}</span>
+                                 <span style="background: ${color}15; color: ${color}; padding: 3px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; border: 1px solid ${color}30;">${displayCategory}</span>
                                  <span style="background: #f1f5f9; color: #64748b; padding: 3px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; border: 1px solid #e2e8f0;">Ruas #${noRuas}</span>
                             </div>
                             <div style="background: #f8fafc; border-radius: 12px; padding: 12px; border: 1px solid #e2e8f0; margin-bottom: 12px; display: flex; justify-content: space-around;">
@@ -390,7 +470,7 @@ async function loadClipGajahData() {
                                 <div style="width: 1px; background: #e2e8f0;"></div>
                                 <div style="text-align: center;">
                                     <div style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px;">PCI INDEX</div>
-                                    <div style="font-weight: 800; color: #334155; font-size: 1.1rem;">${pciValue}</div>
+                                    <div style="font-weight: 800; color: #334155; font-size: 1.1rem;">${pciData.score}</div>
                                 </div>
                             </div>
                             <div style="display: flex; flex-direction: column; gap: 8px;">
@@ -401,15 +481,15 @@ async function loadClipGajahData() {
                         </div>
                     `;
                     
-                    const tooltipText = `<div style="font-size: 0.8rem; opacity: 0.8;">KONDISI JALAN:</div><div style="font-size: 1rem;">${sdiCategory.toUpperCase()}</div>`;
+                    const tooltipText = `<div style="font-size: 0.8rem; opacity: 0.8;">KONDISI JALAN:</div><div style="font-size: 1rem;">${displayCategory.toUpperCase()}</div>`;
                     
                     // Determine class for colored tooltip
                     let tooltipClass = 'modern-tooltip';
-                    const c = sdiCategory.toLowerCase();
-                    if (c.includes('bagus') || c.includes('baik')) tooltipClass += ' bagus';
-                    else if (c.includes('sedang')) tooltipClass += ' sedang';
-                    else if (c.includes('ringan')) tooltipClass += ' ringan';
-                    else if (c.includes('berat') || c.includes('rusak')) tooltipClass += ' berat';
+                    const c = displayCategory.toLowerCase();
+                    if (c.includes('bagus') || c.includes('baik') || c.includes('good') || c.includes('satisfactory')) tooltipClass += ' bagus';
+                    else if (c.includes('sedang') || c.includes('fair')) tooltipClass += ' sedang';
+                    else if (c.includes('ringan') || c.includes('poor')) tooltipClass += ' ringan';
+                    else if (c.includes('berat') || c.includes('rusak') || c.includes('failed') || c.includes('serious')) tooltipClass += ' berat';
 
                     const tooltipOptions = { 
                         className: tooltipClass, 

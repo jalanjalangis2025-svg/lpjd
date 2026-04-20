@@ -76,10 +76,20 @@ async function loadReportData(id) {
     if(document.getElementById('report_date')) document.getElementById('report_date').value = data.report_date || new Date().toISOString().split('T')[0];
     if(document.getElementById('damage_length')) document.getElementById('damage_length').value = data.damage_length || '';
     if(document.getElementById('damage_width')) document.getElementById('damage_width').value = data.damage_width || '';
-    if(document.getElementById('sdi_value')) document.getElementById('sdi_value').value = (data.sdi_value !== null && data.sdi_value !== undefined) ? data.sdi_value : 0;
-    if(document.getElementById('sdi_category')) document.getElementById('sdi_category').value = data.sdi_category || '';
-    if(document.getElementById('pci_value')) document.getElementById('pci_value').value = (data.pci_value !== null && data.pci_value !== undefined) ? data.pci_value : 0;
-    if(document.getElementById('pci_category')) document.getElementById('pci_category').value = data.pci_category || '';
+    
+    // Robust SDI Loading
+    let sdiVal = (data.sdi_value !== null && data.sdi_value !== undefined) ? data.sdi_value : 0;
+    let sdiCat = data.sdi_category || '';
+    if (sdiVal === 0) sdiCat = 'Tidak Rusak';
+    if(document.getElementById('sdi_value')) document.getElementById('sdi_value').value = sdiVal;
+    if(document.getElementById('sdi_category')) document.getElementById('sdi_category').value = sdiCat;
+    
+    // Robust PCI Loading
+    let pciVal = (data.pci_value !== null && data.pci_value !== undefined) ? data.pci_value : 0;
+    let pciCat = data.pci_category || '';
+    if (pciVal === 0) pciCat = 'Tidak Rusak';
+    if(document.getElementById('pci_value')) document.getElementById('pci_value').value = pciVal;
+    if(document.getElementById('pci_category')) document.getElementById('pci_category').value = pciCat;
 }
 
 async function submitReport(e, source, id = null) {
@@ -110,10 +120,19 @@ async function submitReport(e, source, id = null) {
         formData.report_date = document.getElementById('report_date').value;
         formData.damage_length = parseFloat(document.getElementById('damage_length').value) || 0;
         formData.damage_width = parseFloat(document.getElementById('damage_width').value) || 0;
-        formData.sdi_value = parseFloat(document.getElementById('sdi_value').value) || null;
-        formData.sdi_category = document.getElementById('sdi_category').value || null;
-        formData.pci_value = parseFloat(document.getElementById('pci_value').value) || null;
-        formData.pci_category = document.getElementById('pci_category').value || null;
+        // Jika Admin submits/edits, kita tetapkan category default bila empty/0
+        let tempSdiVal = parseFloat(document.getElementById('sdi_value').value) || 0;
+        let tempSdiCat = document.getElementById('sdi_category').value || '';
+        if (tempSdiVal === 0 && tempSdiCat === '') tempSdiCat = 'Tidak Rusak';
+
+        let tempPciVal = parseFloat(document.getElementById('pci_value').value) || 0;
+        let tempPciCat = document.getElementById('pci_category').value || '';
+        if (tempPciVal === 0 && tempPciCat === '') tempPciCat = 'Tidak Rusak';
+
+        formData.sdi_value = tempSdiVal;
+        formData.sdi_category = tempSdiCat;
+        formData.pci_value = tempPciVal;
+        formData.pci_category = tempPciCat;
         
         // If Admin submits/edits, we mark it as verified by default
         formData.status = 'verified';

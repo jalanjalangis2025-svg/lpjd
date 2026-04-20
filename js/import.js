@@ -121,22 +121,44 @@ function mapFeatureToRecord(feature, districtBoundaries, type = 'all') {
     
     console.log(`Importing feature as type: ${type}`);
 
+    let rawPciKey = ['PCI', 'pci_value', 'PCI_Index', 'Skor_kerus', 'Skor_Kerus', 'skor_kerus', 'SKOR', 'Actual_PCI', 'PCI_Score', 'Score', 'Nilai_PCI'];
+    let rawCatKey = ['PCI_Category', 'pci_cat', 'Jenis_keru', 'Jenis_ke_1', 'jenis_keru', 'Kondisi', 'kondisi', 'Keterangan', 'status'];
+
     if (type === 'sdi') {
-        sdiValue = parseFloat(getRobustProperty(props, ['SDI', 'sdi_value', 'Skor_kerus', 'Skor_Kerus', 'skor_kerus', 'SKOR'], 0)) || 0;
-        sdiCategory = getRobustProperty(props, ['SDI_Category', 'Jenis_keru', 'Jenis_ke_1', 'jenis_keru', 'Kondisi', 'kondisi'], 'Unknown');
+        sdiValue = parseFloat(getRobustProperty(props, rawPciKey, 0)) || 0;
+        sdiCategory = getRobustProperty(props, rawCatKey, 'Unknown');
         pciValue = null;
         pciCategory = null;
     } else if (type === 'pci') {
-        pciValue = parseFloat(getRobustProperty(props, ['PCI', 'pci_value', 'PCI_Index', 'Skor_kerus', 'Skor_Kerus', 'skor_kerus', 'SKOR'], 0)) || 0;
-        pciCategory = getRobustProperty(props, ['PCI_Category', 'pci_cat', 'Jenis_keru', 'Jenis_ke_1', 'jenis_keru', 'Kondisi', 'kondisi'], 'Unknown');
+        pciValue = parseFloat(getRobustProperty(props, rawPciKey, 0)) || 0;
+        pciCategory = getRobustProperty(props, rawCatKey, 'Unknown');
         sdiValue = null;
         sdiCategory = null;
     } else {
-        sdiValue = parseFloat(getRobustProperty(props, ['SDI', 'sdi_value', 'Skor_kerus', 'Skor_Kerus', 'skor_kerus', 'SKOR'], null));
-        sdiCategory = getRobustProperty(props, ['SDI_Category', 'Jenis_keru', 'Jenis_ke_1', 'jenis_keru', 'Kondisi', 'kondisi'], null);
-        pciValue = parseFloat(getRobustProperty(props, ['PCI', 'pci_value', 'PCI_Index'], null));
-        pciCategory = getRobustProperty(props, ['PCI_Category', 'pci_cat'], null);
+        sdiValue = parseFloat(getRobustProperty(props, rawPciKey, null));
+        sdiCategory = getRobustProperty(props, rawCatKey, null);
+        pciValue = parseFloat(getRobustProperty(props, rawPciKey, null));
+        pciCategory = getRobustProperty(props, rawCatKey, null);
     }
+
+    // --- Extreme Robustness Fix for Table rendering ---
+    // Handle specific cases for large numbers that should be decimals (e.g., 9025 -> 90.25)
+    if (sdiValue > 150) sdiValue = Math.round((sdiValue / 100) * 100) / 100;
+    if (pciValue > 150) pciValue = Math.round((pciValue / 100) * 100) / 100;
+
+    // If the label clearly says "Tidak Rusak", force the value to 0
+    if (sdiCategory && typeof sdiCategory === 'string' && sdiCategory.toLowerCase().includes('tidak rusak')) {
+        sdiValue = 0;
+        sdiCategory = 'Tidak Rusak';
+    }
+    if (pciCategory && typeof pciCategory === 'string' && pciCategory.toLowerCase().includes('tidak rusak')) {
+        pciValue = 0;
+        pciCategory = 'Tidak Rusak';
+    }
+
+    // Force 0 value to always carry the explicitly named 'Tidak Rusak' category.
+    if (sdiValue === 0) sdiCategory = 'Tidak Rusak';
+    if (pciValue === 0) pciCategory = 'Tidak Rusak';
 
     // Add type to description for easier identification
     const typeLabel = type === 'sdi' ? '[SDI]' : (type === 'pci' ? '[PCI]' : '');

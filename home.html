@@ -172,8 +172,8 @@
                         <div style="display: flex; gap: 4px; background: #f1f5f9; padding: 4px; border-radius: 10px; border: 1px solid #e2e8f0;">
                             <button id="btn-view-all" onclick="setMapConditionView('all')" style="border: none; background: transparent; color: #64748b; padding: 6px 12px; border-radius: 8px; font-weight: 700; font-size: 0.8rem; cursor: pointer; transition: all 0.2s;">Semua</button>
                             <button id="btn-view-warga" onclick="setMapConditionView('warga')" style="border: none; background: transparent; color: #64748b; padding: 6px 12px; border-radius: 8px; font-weight: 700; font-size: 0.8rem; cursor: pointer; transition: all 0.2s;">Warga</button>
-                            <button id="btn-view-sdi" onclick="setMapConditionView('sdi')" style="border: none; background: white; color: #3b82f6; padding: 6px 12px; border-radius: 8px; font-weight: 700; font-size: 0.8rem; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">SDI</button>
-                            <button id="btn-view-pci" onclick="setMapConditionView('pci')" style="border: none; background: transparent; color: #64748b; padding: 6px 12px; border-radius: 8px; font-weight: 700; font-size: 0.8rem; cursor: pointer; transition: all 0.2s;">PCI</button>
+                            <button id="btn-view-sdi" onclick="setMapConditionView('sdi')" style="border: none; background: transparent; color: #64748b; padding: 6px 12px; border-radius: 8px; font-weight: 700; font-size: 0.8rem; cursor: pointer; transition: all 0.2s;">SDI</button>
+                            <button id="btn-view-pci" onclick="setMapConditionView('pci')" style="border: none; background: white; color: #3b82f6; padding: 6px 12px; border-radius: 8px; font-weight: 700; font-size: 0.8rem; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">PCI</button>
                         </div>
                     </div>
                     <div style="display: flex; align-items: center; gap: 8px;">
@@ -205,23 +205,16 @@
                     <h3><i class="fas fa-layer-group"></i> Legenda Peta</h3>
                     
                     <div class="legend-section">
-                        <h4 class="legend-section-title">Kondisi Jalan (SDI)</h4>
-                        <div class="legend-item">
-                            <span class="line-legend bagus"></span>
-                            <span style="color: #15803d; font-weight: 800;">Bagus (0-50)</span>
-                        </div>
-                        <div class="legend-item">
-                            <span class="line-legend sedang"></span>
-                            <span style="color: #a16207; font-weight: 800;">Sedang (50-100)</span>
-                        </div>
-                        <div class="legend-item">
-                            <span class="line-legend ringan"></span>
-                            <span style="color: #c2410c; font-weight: 800;">Rusak Ringan (100-150)</span>
-                        </div>
-                        <div class="legend-item">
-                            <span class="line-legend berat"></span>
-                            <span style="color: #b91c1c; font-weight: 800;">Rusak Berat (>150)</span>
-                        </div>
+                    <div class="legend-section">
+                        <h4 class="legend-section-title">Kondisi Jalan (PCI)</h4>
+                        <div class="legend-item"><span class="line-legend" style="background: #0000FF;"></span><span style="color: #0000FF; font-weight: 800;">Tidak Rusak (0)</span></div>
+                        <div class="legend-item"><span class="line-legend" style="background: #008000;"></span><span style="color: #008000; font-weight: 800;">Excellent (85-100)</span></div>
+                        <div class="legend-item"><span class="line-legend" style="background: #90EE90;"></span><span style="color: #90EE90; font-weight: 800;">Satisfactory (70-84)</span></div>
+                        <div class="legend-item"><span class="line-legend" style="background: #FFFF00;"></span><span style="color: #FFFF00; font-weight: 800;">Fair (55-69)</span></div>
+                        <div class="legend-item"><span class="line-legend" style="background: #FFA500;"></span><span style="color: #FFA500; font-weight: 800;">Poor (40-54)</span></div>
+                        <div class="legend-item"><span class="line-legend" style="background: #FF0000;"></span><span style="color: #FF0000; font-weight: 800;">Serious (10-39)</span></div>
+                        <div class="legend-item"><span class="line-legend" style="background: #8B0000;"></span><span style="color: #8B0000; font-weight: 800;">Failed (1-9)</span></div>
+                    </div>
                     </div>
                 </div>
             </div>
@@ -968,8 +961,27 @@
 
                 if (currentMapTab === 'sdi' || currentMapTab === 'pci') {
                     const val = currentMapTab === 'sdi' ? (item.sdi_value || 0) : (item.pci_value || 0);
-                    const cat = currentMapTab === 'sdi' ? (item.sdi_category || '-') : (item.pci_category || '-');
+                    let cat = currentMapTab === 'sdi' ? (item.sdi_category || '-') : (item.pci_category || '-');
                     
+                    // Robust Map Table Display Fix  
+                    if (val === 0 || (cat && cat.toLowerCase().includes('tidak rusak'))) {
+                        cat = 'Tidak Rusak';
+                    } else if (!cat || cat === '-' || cat === 'Unknown') {
+                        cat = '-';
+                    }
+
+                    // Format Badge Value Colors match the Map Pins
+                    let valBadgeCss = '';
+                    if (val === 0 && cat === 'Tidak Rusak') {
+                        valBadgeCss = 'background: #3b82f6; color: white; border: 1px solid #2563eb;'; // Blue
+                    } else if (val > 0) {
+                        valBadgeCss = 'background: #ef4444; color: white; border: 1px solid #dc2626;'; // Red (Rusak)
+                    } else {
+                        valBadgeCss = 'background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1;'; // Grey fallback
+                    }
+
+                    const valBadge = `<span class="badge" style="${valBadgeCss} min-width: 40px; justify-content: center;">${val}</span>`;
+
                     let noRuas = '-';
                     if (item.description && item.description.includes('Ruas #')) {
                         noRuas = item.description.split('Ruas #')[1].split(' ')[0] || '-';
@@ -981,7 +993,7 @@
                             <td>${date}</td>
                             <td style="font-weight: 700; color: #3b82f6;">${noRuas}</td>
                             <td>${item.district}</td>
-                            <td><span class="badge badge-${currentMapTab}">${val}</span></td>
+                            <td>${valBadge}</td>
                             <td style="font-size: 0.8rem;">${cat}</td>
                             <td>${statusBadge}</td>
                             <td style="text-align: center;">
@@ -1246,10 +1258,28 @@
                     const sdiVal = (item.sdi_value !== null && item.sdi_value !== undefined) ? item.sdi_value : 0;
                     const pciVal = (item.pci_value !== null && item.pci_value !== undefined) ? item.pci_value : 0;
                     
-                    const sdi = `<span class="badge badge-sdi">${sdiVal}</span>`;
-                    const pci = `<span class="badge badge-pci">${pciVal}</span>`;
-                    const sdiCat = `<span class="badge" style="background: #f1f5f9; color: #475569;">${item.sdi_category || '-'}</span>`;
-                    const pciCat = `<span class="badge" style="background: #f1f5f9; color: #475569;">${item.pci_category || '-'}</span>`;
+                    let valToUse = type === 'sdi' ? sdiVal : pciVal;
+                    let rawCat = type === 'sdi' ? item.sdi_category : item.pci_category;
+
+                    // Robust Table Display Fix - Force 0 to be 'Tidak Rusak'
+                    if (valToUse === 0 || (rawCat && rawCat.toLowerCase().includes('tidak rusak'))) {
+                        rawCat = 'Tidak Rusak';
+                    } else if (!rawCat || rawCat === '-' || rawCat === 'Unknown') {
+                        rawCat = '-';
+                    }
+
+                    // Format Badge Value Colors
+                    let valBadgeCss = '';
+                    if (valToUse === 0 && rawCat === 'Tidak Rusak') {
+                        valBadgeCss = 'background: #3b82f6; color: white; border: 1px solid #2563eb;'; // Blue
+                    } else if (valToUse > 0) {
+                        valBadgeCss = 'background: #ef4444; color: white; border: 1px solid #dc2626;'; // Red (Rusak)
+                    } else {
+                        valBadgeCss = 'background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1;'; // Grey fallback
+                    }
+
+                    const valBadge = `<span class="badge" style="${valBadgeCss} min-width: 40px; justify-content: center;">${valToUse}</span>`;
+                    const catBadge = `<span class="badge" style="background: #f1f5f9; color: #475569;">${rawCat}</span>`;
 
                     // Extract No. Ruas from description
                     let noRuas = '-';
@@ -1268,8 +1298,8 @@
                                     ${item.description || '-'}
                                 </div>
                             </td>
-                            <td>${type === 'sdi' ? sdi : pci}</td>
-                            <td>${type === 'sdi' ? sdiCat : pciCat}</td>
+                            <td>${valBadge}</td>
+                            <td>${catBadge}</td>
                             <td>${statusBadge}</td>
                             <td>${attachmentHtml}</td>
                             <td style="text-align: center;">
