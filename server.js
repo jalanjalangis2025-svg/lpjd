@@ -1,4 +1,5 @@
 const http = require('http');
+const https = require('https');
 const fs = require('fs');
 const path = require('path');
 
@@ -17,12 +18,57 @@ const MIME_TYPES = {
   '.mp4': 'video/mp4',
 };
 
+// Follow redirects recursively (max 5 hops)
+function resolveRedirect(url, hops, callback) {
+  if (hops > 5) return callback(null, url);
+
+  const options = {
+    headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' }
+  };
+
+  https.get(url, options, (response) => {
+    response.resume(); // drain body
+    if ([301, 302, 303, 307, 308].includes(response.statusCode) && response.headers.location) {
+      resolveRedirect(response.headers.location, hops + 1, callback);
+    } else {
+      callback(null, url);
+    }
+  }).on('error', (e) => {
+    callback(e, url);
+  });
+}
+
 http.createServer((req, res) => {
-  // Strip query string
   const urlParts = req.url.split('?');
   const pathname = urlParts[0];
-  const search = urlParts[1] ? '?' + urlParts[1] : '';
+  const queryString = urlParts[1] || '';
+  const search = queryString ? '?' + queryString : '';
 
+  // ==============================
+  // API: Resolve short links
+  // ==============================
+  if (pathname === '/api/resolve') {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Content-Type', 'application/json');
+
+    const targetUrl = new URLSearchParams(queryString).get('url');
+    if (!targetUrl) {
+      res.writeHead(400);
+      res.end(JSON.stringify({ error: 'url parameter is required' }));
+      return;
+    }
+
+    resolveRedirect(targetUrl, 0, (err, finalUrl) => {
+      res.writeHead(200);
+      res.end(JSON.stringify({ finalUrl: finalUrl }));
+    });
+
+    return; // Stop here — do NOT fall through to file serving
+  }
+
+  // ==============================
+  // File Serving
+  // ==============================
   let filePath = '.' + decodeURIComponent(pathname);
 
   // Default to index.html for root
@@ -56,17 +102,15 @@ http.createServer((req, res) => {
 
   fs.readFile(filePath, (error, content) => {
     if (error) {
-      if (error.code == 'ENOENT') {
+      if (error.code === 'ENOENT') {
         console.error(`404: ${filePath}`);
         res.writeHead(404, { 'Content-Type': 'text/html' });
-        res.end("<h1>404 Not Found</h1><p>The requested file could not be found: " + pathname + "</p>", 'utf-8');
-      }
-      else {
+        res.end(`<h1>404 Not Found</h1><p>File not found: ${pathname}</p>`, 'utf-8');
+      } else {
         res.writeHead(500);
-        res.end('Sorry, check with the site admin for error: ' + error.code + ' ..\n');
+        res.end('Server error: ' + error.code);
       }
-    }
-    else {
+    } else {
       res.writeHead(200, { 'Content-Type': contentType });
       res.end(content, 'utf-8');
     }
@@ -74,5 +118,5 @@ http.createServer((req, res) => {
 
 }).listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}/`);
-  console.log(`Try accessing: http://localhost:${PORT}/login`);
+  console.log(`API resolve: http://localhost:${PORT}/api/resolve?url=<encoded_url>`);
 });

@@ -50,29 +50,64 @@ function toggleLocOption() {
 }
 
 // Extract location from GMaps link
-function getLocFromGmaps() {
-    const link = document.getElementById('gmaps_link').value;
+async function getLocFromGmaps() {
+    let rawInput = document.getElementById('gmaps_link').value.trim();
     const status = document.getElementById('gmaps-status');
+    const btn = document.querySelector('#loc-gmaps button');
     
-    if (!link) {
+    // If empty → auto open Google Maps in new tab
+    if (!rawInput) {
+        window.open('https://maps.google.com', '_blank');
         if (status) {
-            status.innerText = "Masukkan link Google Maps terlebih dahulu.";
-            status.style.color = "var(--danger)";
+            status.innerText = "Google Maps dibuka. Cari lokasi, lalu salin link dan tempel di atas.";
+            status.style.color = "var(--primary-blue, #2563eb)";
         }
         return;
+    }
+
+    if (status) {
+        status.innerText = "Mengekstrak koordinat...";
+        status.style.color = "#64748b";
+    }
+    if (btn) btn.disabled = true;
+
+    // Extract URL from text (in case user pasted "Nama Tempat https://...")
+    let link = rawInput;
+    const urlMatch = rawInput.match(/https?:\/\/[^\s]+/);
+    if (urlMatch) {
+        link = urlMatch[0];
+    }
+
+    // Resolve short link via server API
+    if (link.includes('maps.app.goo.gl') || link.includes('goo.gl/maps')) {
+        try {
+            const response = await fetch(`/api/resolve?url=${encodeURIComponent(link)}`);
+            if (response.ok) {
+                const data = await response.json();
+                if (data.finalUrl) {
+                    link = data.finalUrl;
+                }
+            }
+        } catch (e) {
+            console.warn("Gagal resolve short link:", e);
+        }
     }
 
     let lat = null;
     let lng = null;
     
-    // Regex patterns for Google Maps URLs
+    // Regex patterns for Google Maps URLs (ordered by specificity)
     const regexps = [
-        /@(-?\d+\.\d+),(-?\d+\.\d+)/,
-        /ll=(-?\d+\.\d+),(-?\d+\.\d+)/,
-        /q=(-?\d+\.\d+),?(-?\d+\.\d+)?/
+        /!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/,           // !3d<lat>!4d<lng> — from resolved mobile links
+        /@(-?\d+\.\d+),(-?\d+\.\d+)/,                  // @lat,lng — standard desktop URL
+        /place\/.*\/@(-?\d+\.\d+),(-?\d+\.\d+)/,       // place/.../@lat,lng
+        /ll=(-?\d+\.\d+),(-?\d+\.\d+)/,                // ll=lat,lng
+        /q=(-?\d+\.\d+),(-?\d+\.\d+)/,                 // q=lat,lng
+        /query=(-?\d+\.\d+),(-?\d+\.\d+)/,
+        /search\/(-?\d+\.\d+),(-?\d+\.\d+)/,
     ];
 
-    for (let r of regexps) {
+    for (const r of regexps) {
         const match = link.match(r);
         if (match && match[1] && match[2]) {
             lat = match[1];
@@ -81,36 +116,36 @@ function getLocFromGmaps() {
         }
     }
 
-    // Try parsing URL query parameters if regex fails
+    // Fallback: try URL ?q= parameter
     if (!lat || !lng) {
         try {
-            const url = new URL(link);
-            const q = url.searchParams.get('q');
+            const urlObj = new URL(link);
+            const q = urlObj.searchParams.get('q');
             if (q) {
                 const parts = q.split(',');
-                if (parts.length >= 2) {
+                if (parts.length >= 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
                     lat = parts[0].trim();
                     lng = parts[1].trim();
                 }
             }
-        } catch(e) {
-            // Not a valid URL
-        }
+        } catch(e) {}
     }
 
     if (lat && lng) {
         document.getElementById('latitude').value = parseFloat(lat);
         document.getElementById('longitude').value = parseFloat(lng);
         if (status) {
-            status.innerText = "Koordinat berhasil diekstrak!";
+            status.innerText = `✓ Koordinat ditemukan: ${parseFloat(lat)}, ${parseFloat(lng)}`;
             status.style.color = "green";
         }
     } else {
         if (status) {
-            status.innerText = "Gagal mengekstrak koordinat. Pastikan format link valid (bukan link pendek/short link) dan berisi koordinat.";
-            status.style.color = "var(--danger)";
+            status.innerText = "Koordinat tidak ditemukan. Coba salin link dari Google Maps lagi, atau gunakan tombol GPS.";
+            status.style.color = "var(--danger, #ef4444)";
         }
     }
+    
+    if (btn) btn.disabled = false;
 }
 
 // Handle Form Submission and Data Loading
