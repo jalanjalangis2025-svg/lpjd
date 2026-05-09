@@ -17,6 +17,102 @@ function getLocation() {
     }
 }
 
+// Toggle Location Options (GPS vs GMaps)
+function toggleLocOption() {
+    const isGps = document.querySelector('input[name="loc_option"][value="gps"]')?.checked ?? true;
+    
+    const locGps = document.getElementById('loc-gps');
+    const locGmaps = document.getElementById('loc-gmaps');
+    const cardGps = document.getElementById('card-gps');
+    const cardGmaps = document.getElementById('card-gmaps');
+    
+    if (locGps) locGps.style.display = isGps ? 'block' : 'none';
+    if (locGmaps) locGmaps.style.display = isGps ? 'none' : 'block';
+    
+    if (cardGps) isGps ? cardGps.classList.add('active') : cardGps.classList.remove('active');
+    if (cardGmaps) !isGps ? cardGmaps.classList.add('active') : cardGmaps.classList.remove('active');
+    
+    // Handle photo input capture behavior
+    const photoInput = document.getElementById('photo');
+    if (photoInput) {
+        if (isGps) {
+            photoInput.setAttribute('capture', 'environment');
+        } else {
+            photoInput.removeAttribute('capture');
+        }
+    }
+    
+    // Clear status
+    const status = document.getElementById('location-status');
+    if (status) status.innerText = "";
+    const gmapsStatus = document.getElementById('gmaps-status');
+    if (gmapsStatus) gmapsStatus.innerText = "";
+}
+
+// Extract location from GMaps link
+function getLocFromGmaps() {
+    const link = document.getElementById('gmaps_link').value;
+    const status = document.getElementById('gmaps-status');
+    
+    if (!link) {
+        if (status) {
+            status.innerText = "Masukkan link Google Maps terlebih dahulu.";
+            status.style.color = "var(--danger)";
+        }
+        return;
+    }
+
+    let lat = null;
+    let lng = null;
+    
+    // Regex patterns for Google Maps URLs
+    const regexps = [
+        /@(-?\d+\.\d+),(-?\d+\.\d+)/,
+        /ll=(-?\d+\.\d+),(-?\d+\.\d+)/,
+        /q=(-?\d+\.\d+),?(-?\d+\.\d+)?/
+    ];
+
+    for (let r of regexps) {
+        const match = link.match(r);
+        if (match && match[1] && match[2]) {
+            lat = match[1];
+            lng = match[2];
+            break;
+        }
+    }
+
+    // Try parsing URL query parameters if regex fails
+    if (!lat || !lng) {
+        try {
+            const url = new URL(link);
+            const q = url.searchParams.get('q');
+            if (q) {
+                const parts = q.split(',');
+                if (parts.length >= 2) {
+                    lat = parts[0].trim();
+                    lng = parts[1].trim();
+                }
+            }
+        } catch(e) {
+            // Not a valid URL
+        }
+    }
+
+    if (lat && lng) {
+        document.getElementById('latitude').value = parseFloat(lat);
+        document.getElementById('longitude').value = parseFloat(lng);
+        if (status) {
+            status.innerText = "Koordinat berhasil diekstrak!";
+            status.style.color = "green";
+        }
+    } else {
+        if (status) {
+            status.innerText = "Gagal mengekstrak koordinat. Pastikan format link valid (bukan link pendek/short link) dan berisi koordinat.";
+            status.style.color = "var(--danger)";
+        }
+    }
+}
+
 // Handle Form Submission and Data Loading
 document.addEventListener('DOMContentLoaded', () => {
     const publicForm = document.getElementById('reportForm');

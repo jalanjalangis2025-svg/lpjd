@@ -131,11 +131,45 @@
 
                     <div class="form-group">
                         <label>Titik Koordinat</label>
-                        <button type="button" onclick="getLocation()" class="btn-primary"
-                            style="margin-bottom: 10px; font-size: 1rem;">
-                            <i class="fas fa-location-crosshairs"></i> Ambil Lokasi Saat Ini
-                        </button>
-                        <div class="details-grid">
+
+                        <!-- Pilihan Cara -->
+                        <div class="location-options-container">
+                            <label class="loc-option-card active" id="card-gps">
+                                <input type="radio" name="loc_option" value="gps" checked onchange="toggleLocOption()" style="display:none;">
+                                <i class="fas fa-location-crosshairs"></i>
+                                <span>GPS Saat Ini</span>
+                            </label>
+                            <label class="loc-option-card" id="card-gmaps">
+                                <input type="radio" name="loc_option" value="gmaps" onchange="toggleLocOption()" style="display:none;">
+                                <i class="fas fa-map-marked-alt"></i>
+                                <span>Link Google Maps</span>
+                            </label>
+                        </div>
+
+                        <!-- GPS Option -->
+                        <div id="loc-gps">
+                            <button type="button" onclick="getLocation()" class="btn-primary"
+                                style="margin-bottom: 10px; font-size: 1rem; width: 100%;">
+                                <i class="fas fa-location-crosshairs"></i> Ambil Lokasi Saat Ini
+                            </button>
+                            <span id="location-status" style="display: block; margin-bottom: 5px; font-size: 0.9em;"></span>
+                        </div>
+
+                        <!-- GMaps Option -->
+                        <div id="loc-gmaps" style="display: none; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 10px;">
+                            <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 10px; line-height: 1.4;"><i class="fas fa-info-circle"></i> Buka Google Maps di browser, cari lokasi, lalu salin URL penuh (contoh: google.com/maps/@-6.89,110.63,15z).</p>
+                            <div class="input-with-icon" style="margin-bottom: 10px;">
+                                <i class="fas fa-link"></i>
+                                <input type="text" id="gmaps_link" placeholder="Tempel Link Google Maps di sini">
+                            </div>
+                            <button type="button" onclick="getLocFromGmaps()" class="btn-primary"
+                                style="margin-bottom: 5px; font-size: 0.95rem; width: 100%; background-color: #3b82f6; border-color: #3b82f6;">
+                                <i class="fas fa-search-location"></i> Ambil Koordinat dari Link
+                            </button>
+                            <span id="gmaps-status" style="display: block; margin-top: 5px; font-size: 0.9em;"></span>
+                        </div>
+
+                        <div class="details-grid" style="margin-top: 10px;">
                             <div class="input-with-icon">
                                 <i class="fas fa-map-pin"></i>
                                 <input type="number" id="latitude" placeholder="Latitude" step="any" required>
