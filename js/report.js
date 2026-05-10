@@ -53,9 +53,9 @@ function toggleLocOption() {
 async function getLocFromGmaps() {
     let rawInput = document.getElementById('gmaps_link').value.trim();
     const status = document.getElementById('gmaps-status');
-    const btn = document.querySelector('#loc-gmaps button');
-    
-    // If empty → auto open Google Maps in new tab
+    const allBtns = document.querySelectorAll('#loc-gmaps button');
+    const btn = allBtns[allBtns.length - 1];
+
     if (!rawInput) {
         window.open('https://maps.google.com', '_blank');
         if (status) {
@@ -65,87 +65,211 @@ async function getLocFromGmaps() {
         return;
     }
 
+    if (btn) btn.disabled = true;
     if (status) {
-        status.innerText = "Mengekstrak koordinat...";
+        status.innerText = "⏳ Mengekstrak koordinat...";
         status.style.color = "#64748b";
     }
-    if (btn) btn.disabled = true;
 
-    // Extract URL from text (in case user pasted "Nama Tempat https://...")
-    let link = rawInput;
-    const urlMatch = rawInput.match(/https?:\/\/[^\s]+/);
-    if (urlMatch) {
-        link = urlMatch[0];
-    }
+    try {
+        let link = rawInput;
+        const urlMatch = rawInput.match(/https?:\/\/[^\s]+/);
+        if (urlMatch) link = urlMatch[0];
 
-    // Resolve short link via server API
-    if (link.includes('maps.app.goo.gl') || link.includes('goo.gl/maps')) {
-        try {
-            const response = await fetch(`/api/resolve?url=${encodeURIComponent(link)}`);
-            if (response.ok) {
-                const data = await response.json();
-                if (data.finalUrl) {
-                    link = data.finalUrl;
-                }
-            }
-        } catch (e) {
-            console.warn("Gagal resolve short link:", e);
+        // 1. Instant check: Try to find coordinates in the input link itself before calling server
+        const instantLat = _extractFromText(link);
+        if (instantLat) {
+            _setCoords(instantLat.lat, instantLat.lng, status, btn);
+            return;
         }
-    }
 
-    let lat = null;
-    let lng = null;
-    
-    // Regex patterns for Google Maps URLs (ordered by specificity)
+        // 2. Server-side resolve for short links
+        const isShortLink = link.includes('maps.app.goo.gl') || link.includes('goo.gl/maps') || link.includes('g.co/');
+        if (isShortLink) {
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 6000); // 6s timeout
+
+                const response = await fetch(`/api/resolve?url=${encodeURIComponent(link)}`, {
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.lat && data.lng) {
+                        _setCoords(data.lat, data.lng, status, btn);
+                        return;
+                    }
+                    if (data.finalUrl) link = data.finalUrl;
+                }
+            } catch (e) {
+                console.warn("Resolve gagal/timeout, lanjut ke regex:", e.name);
+            }
+        }
+
+        // 3. Final Regex Check on the resolved link
+        const finalCoords = _extractFromText(link);
+        if (finalCoords) {
+            _setCoords(finalCoords.lat, finalCoords.lng, status, btn);
+        } else {
+            _setCoords(null, null, status, btn);
+        }
+
+    } catch (err) {
+        console.error("Error in getLocFromGmaps:", err);
+        _setCoords(null, null, status, btn);
+    } finally {
+        if (btn) btn.disabled = false;
+    }
+}
+
+// Internal helper for regex extraction
+function _extractFromText(text) {
     const regexps = [
-        /!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/,           // !3d<lat>!4d<lng> — from resolved mobile links
-        /@(-?\d+\.\d+),(-?\d+\.\d+)/,                  // @lat,lng — standard desktop URL
-        /place\/.*\/@(-?\d+\.\d+),(-?\d+\.\d+)/,       // place/.../@lat,lng
-        /ll=(-?\d+\.\d+),(-?\d+\.\d+)/,                // ll=lat,lng
-        /q=(-?\d+\.\d+),(-?\d+\.\d+)/,                 // q=lat,lng
-        /query=(-?\d+\.\d+),(-?\d+\.\d+)/,
-        /search\/(-?\d+\.\d+),(-?\d+\.\d+)/,
+        /!3d(-?[\d.]+)!4d(-?[\d.]+)/,
+        /@(-?[\d.]+),(-?[\d.]+)/,
+        /place\/.*\/@(-?[\d.]+),(-?[\d.]+)/,
+        /[?&]q=(-?[\d.]+),(-?[\d.]+)/,
+        /[?&]ll=(-?[\d.]+),(-?[\d.]+)/,
+        /[?&]query=(-?[\d.]+),(-?[\d.]+)/,
+        /[?&]center=(-?[\d.]+),(-?[\d.]+)/,
+        /search\/(-?[\d.]+),(-?[\d.]+)/,
+        /[?&]daddr=(-?[\d.]+),(-?[\d.]+)/,
+        /\/(-?\d{1,3}\.\d{4,}),(-?\d{1,3}\.\d{4,})/,
     ];
 
     for (const r of regexps) {
-        const match = link.match(r);
+        const match = text.match(r);
         if (match && match[1] && match[2]) {
-            lat = match[1];
-            lng = match[2];
-            break;
+            const lat = parseFloat(match[1]);
+            const lng = parseFloat(match[2]);
+            if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+                return { lat, lng };
+            }
         }
     }
 
-    // Fallback: try URL ?q= parameter
-    if (!lat || !lng) {
-        try {
-            const urlObj = new URL(link);
-            const q = urlObj.searchParams.get('q');
-            if (q) {
-                const parts = q.split(',');
-                if (parts.length >= 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
-                    lat = parts[0].trim();
-                    lng = parts[1].trim();
-                }
+    // Try URLSearchParams
+    try {
+        const urlObj = new URL(text);
+        const q = urlObj.searchParams.get('q') || urlObj.searchParams.get('query') || urlObj.searchParams.get('ll');
+        if (q) {
+            const parts = q.split(',');
+            if (parts.length >= 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+                return { lat: parts[0].trim(), lng: parts[1].trim() };
             }
-        } catch(e) {}
-    }
+        }
+    } catch(e) {}
+    
+    return null;
+}
 
+// Helper: set coordinate fields and update status message
+function _setCoords(lat, lng, status, btn) {
     if (lat && lng) {
         document.getElementById('latitude').value = parseFloat(lat);
         document.getElementById('longitude').value = parseFloat(lng);
         if (status) {
-            status.innerText = `✓ Koordinat ditemukan: ${parseFloat(lat)}, ${parseFloat(lng)}`;
+            status.innerHTML = `<span style="color:green;">✓ Koordinat ditemukan: ${parseFloat(lat).toFixed(6)}, ${parseFloat(lng).toFixed(6)}</span>`;
             status.style.color = "green";
         }
     } else {
         if (status) {
-            status.innerText = "Koordinat tidak ditemukan. Coba salin link dari Google Maps lagi, atau gunakan tombol GPS.";
+            status.innerHTML = `
+                <span style="color:var(--danger,#ef4444);">
+                ⚠️ Koordinat tidak ditemukan dari link ini.<br>
+                Coba cara lain:<br>
+                &nbsp;• Buka Google Maps di <b>browser</b> (bukan aplikasi HP)<br>
+                &nbsp;• Klik kanan lokasi → <b>Salin koordinat</b><br>
+                &nbsp;• Atau gunakan tombol <b>GPS Saat Ini</b> di atas.
+                </span>`;
             status.style.color = "var(--danger, #ef4444)";
         }
     }
-    
     if (btn) btn.disabled = false;
+}
+
+// Open the pasted Google Maps link in a new tab (so browser resolves short link naturally)
+function openGmapsLink() {
+    const input = document.getElementById('gmaps_link');
+    const status = document.getElementById('gmaps-status');
+    let link = (input?.value || '').trim();
+
+    if (!link) {
+        window.open('https://maps.google.com', '_blank');
+        return;
+    }
+
+    // Extract URL if mixed with text
+    const m = link.match(/https?:\/\/[^\s]+/);
+    if (m) link = m[0];
+
+    window.open(link, '_blank');
+
+    if (status) {
+        status.innerHTML = `<span style="color:#2563eb;">
+            <i class="fas fa-info-circle"></i> Link dibuka di tab baru.<br>
+            Setelah halaman terbuka, <b>salin URL lengkap dari address bar</b>,<br>
+            kembali ke sini, <b>tempel di kolom di atas</b>, lalu klik <b>"Ambil Koordinat"</b>.
+        </span>`;
+    }
+}
+
+// Auto-try extracting coordinates when user pastes a link (for direct/long URLs)
+function onGmapsLinkInput(value) {
+    const status = document.getElementById('gmaps-status');
+    if (!value || !value.includes('google.com/maps')) return;
+
+    // Silently try to extract if it's already a full URL
+    const regexps = [
+        /!3d(-?[\d.]+)!4d(-?[\d.]+)/,
+        /@(-?[\d.]+),(-?[\d.]+)/,
+        /[?&]q=(-?[\d.]+),(-?[\d.]+)/,
+        /[?&]ll=(-?[\d.]+),(-?[\d.]+)/,
+    ];
+
+    for (const r of regexps) {
+        const match = value.match(r);
+        if (match) {
+            const lat = parseFloat(match[1]);
+            const lng = parseFloat(match[2]);
+            if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+                document.getElementById('latitude').value = lat;
+                document.getElementById('longitude').value = lng;
+                if (status) {
+                    status.innerHTML = `<span style="color:green;"><i class="fas fa-check-circle"></i> Koordinat terdeteksi otomatis: ${lat.toFixed(6)}, ${lng.toFixed(6)}</span>`;
+                }
+                return;
+            }
+        }
+    }
+}
+
+// Parse manually entered coordinates like "-6.9012, 110.6234"
+function parseManualCoords() {
+    const input = document.getElementById('manual_coords');
+    const status = document.getElementById('gmaps-status');
+    const raw = (input?.value || '').trim();
+
+    // Accept formats: "-6.9012, 110.6234" or "-6.9012 110.6234" or "-6.9012,110.6234"
+    const m = raw.match(/^(-?[\d.]+)[,\s]+(-?[\d.]+)$/);
+    if (m) {
+        const lat = parseFloat(m[1]);
+        const lng = parseFloat(m[2]);
+        if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+            document.getElementById('latitude').value = lat;
+            document.getElementById('longitude').value = lng;
+            if (status) {
+                status.innerHTML = `<span style="color:green;"><i class="fas fa-check-circle"></i> Koordinat manual digunakan: ${lat.toFixed(6)}, ${lng.toFixed(6)}</span>`;
+            }
+            return;
+        }
+    }
+
+    if (status) {
+        status.innerHTML = `<span style="color:var(--danger,#ef4444);">Format tidak valid. Contoh: <b>-6.9012, 110.6234</b></span>`;
+    }
 }
 
 // Handle Form Submission and Data Loading
